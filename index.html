@@ -1859,31 +1859,23 @@ lucide.createIcons();
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-  // เชื่อมต่อ Supabase ของคุณ
-  const SUPABASE_URL = 'https://daivjnpnmwythsivtqer.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhaXZqbnBubXd5dGhzaXZ0cWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NDA2OTYsImV4cCI6MjExMDIxNjY5Nn0.miK_4_GYe3gkus3L8V2_-UqCzHlDxDDll3JextWwQjk';
-  
-  const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // ทดสอบดึงข้อมูลจากตาราง p
-  async function testSupabase() {
-    let { data, error } = await _supabase.from('p').select('*');
-    console.log('ข้อมูลจาก Supabase:', data);
-  }
-  testSupabase();
-</script>
-<!-- โหลดไลบรารี Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
   (async function initAutoSync() {
     const SUPABASE_URL = 'https://daivjnpnmwythsivtqer.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhaXZqbnBubXd5dGhzaXZ0cWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NDA2OTYsImV4cCI6MjExMDIxNjY5Nn0.miK_4_GYe3gkus3L8V2_-UqCzHlDxDDll3JextWwQjk';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // 1. ดึงข้อมูลล่าสุดทั้งหมดจาก Supabase เมื่อเปิดหน้าเว็บ
+    console.log("🔌 กำลังเชื่อมต่อ Supabase...");
+
+    // 1. ดึงข้อมูลล่าสุดจาก Supabase
     const { data, error } = await _supabase.from('dashboard_sync').select('*');
-    if (!error && data && data.length > 0) {
+    if (error) {
+      console.error("❌ เชื่อมต่อ Supabase ไม่สำเร็จ (Error):", error);
+      return;
+    } else {
+      console.log("✅ เชื่อมต่อ Supabase สำเร็จ! ข้อมูลในฐานข้อมูล:", data);
+    }
+
+    if (data && data.length > 0) {
       let hasChanges = false;
       data.forEach(row => {
         const stringVal = typeof row.value === 'string' ? row.value : JSON.stringify(row.value);
@@ -1892,7 +1884,6 @@ lucide.createIcons();
           hasChanges = true;
         }
       });
-      // รีเฟรชหน้าเว็บ 1 ครั้งหากได้ข้อมูลใหม่จากเครื่องอื่น
       if (hasChanges && !sessionStorage.getItem('synced_once')) {
         sessionStorage.setItem('synced_once', 'true');
         location.reload();
@@ -1901,7 +1892,7 @@ lucide.createIcons();
     }
     sessionStorage.removeItem('synced_once');
 
-    // 2. ดักจับการบันทึกข้อมูลทุกหมวดหมู่ในหน้าเว็บ แล้วส่งขึ้น Supabase ทันที
+    // 2. ดักจับการบันทึกข้อมูลเพื่อซิงค์ขึ้น Supabase อัตโนมัติ
     const originalSetItem = localStorage.setItem.bind(localStorage);
     localStorage.setItem = function(key, value) {
       originalSetItem(key, value);
@@ -1913,7 +1904,8 @@ lucide.createIcons();
         value: parsedValue,
         updated_at: new Date().toISOString()
       }, { onConflict: 'key' }).then(({ error }) => {
-        if (error) console.error('Sync Error:', error);
+        if (error) console.error('❌ Sync Error:', error);
+        else console.log('☁️ ซิงค์ข้อมูลหมวดหมู่ "' + key + '" ขึ้น Supabase สำเร็จ');
       });
     };
   })();
