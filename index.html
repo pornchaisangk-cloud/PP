@@ -1866,8 +1866,14 @@ lucide.createIcons();
 
   const safeParse = s => { try { return JSON.parse(s); } catch { return s; } };
 
+  // แปลงเป็น JSON โดยเรียง key ให้เหมือนกันเสมอ เพื่อเทียบค่าได้ถูกต้อง
+  const canon = v => JSON.stringify(v, (k, val) =>
+    (val && typeof val === 'object' && !Array.isArray(val))
+      ? Object.keys(val).sort().reduce((o, kk) => (o[kk] = val[kk], o), {})
+      : val
+  );
+
   try {
-    // 1) ดึงข้อมูลทั้งหมดจาก Supabase
     const { data, error } = await sb.from('dashboard_sync').select('key, value');
     if (error) throw error;
 
@@ -1875,17 +1881,17 @@ lucide.createIcons();
     const remoteKeys = new Set(remote.map(r => r.key));
     let changed = false;
 
-    // 2) เอาค่าจาก Supabase มาลง localStorage ถ้าต่างจากเครื่องนี้
+    // 1) ดึงค่าจาก Supabase ลงเครื่อง เฉพาะตัวที่ต่างจริง ๆ
     remote.forEach(row => {
       if (!row.key || row.value === null || row.value === undefined) return;
-      const incoming = JSON.stringify(row.value);
-      if (localStorage.getItem(row.key) !== incoming) {
-        rawSetItem(row.key, incoming);
+      const local = localStorage.getItem(row.key);
+      if (local === null || canon(safeParse(local)) !== canon(row.value)) {
+        rawSetItem(row.key, JSON.stringify(row.value));
         changed = true;
       }
     });
 
-    // 3) ส่งข้อมูลที่มีในเครื่องนี้แต่ยังไม่มีบน Supabase ขึ้นไป (เช่น ข้อมูลจาก iPad ครั้งแรก)
+    // 2) ส่งข้อมูลที่มีในเครื่องแต่ยังไม่มีบน Supabase ขึ้นไป
     const toPush = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
@@ -1898,7 +1904,7 @@ lucide.createIcons();
       if (pushErr) console.error('Initial push error:', pushErr);
     }
 
-    // 4) ดักทุกการ save ให้ส่งขึ้น Supabase ทันที
+    // 3) ดักการ save ทุกครั้งให้ส่งขึ้น Supabase
     localStorage.setItem = function (key, value) {
       rawSetItem(key, value);
       sb.from('dashboard_sync')
@@ -1906,8 +1912,12 @@ lucide.createIcons();
         .then(({ error }) => { if (error) console.error('Sync error:', error); });
     };
 
-    // 5) ถ้ามีข้อมูลใหม่จาก Supabase ให้โหลดหน้าใหม่ เพื่อให้แอปแสดงผลด้วยข้อมูลล่าสุด
-    if (changed) location.reload();
+    // 4) reload เพื่อให้แอปแสดงข้อมูลล่าสุด แต่ไม่เกินครั้งละ 1 ครั้งใน 10 วินาที กันการวนลูป
+    const lastReload = Number(sessionStorage.getItem('sync_last_reload') || 0);
+    if (changed && Date.now() - lastReload > 10000) {
+      sessionStorage.setItem('sync_last_reload', String(Date.now()));
+      location.reload();
+    }
 
   } catch (err) {
     console.error('Supabase sync failed:', err);
