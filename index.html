@@ -1855,3 +1855,20 @@ lucide.createIcons();
 </script>
 </body>
 </html>
+<!-- โหลดไลบรารี Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  // เชื่อมต่อ Supabase ของคุณ
+  const SUPABASE_URL = 'https://daivjnpnmwythsivtqer.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhaXZqbnBubXd5dGhzaXZ0cWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NDA2OTYsImV4cCI6MjExMDIxNjY5Nn0.miK_4_GYe3gkus3L8V2_-UqCzHlDxDDll3JextWwQjk';
+  
+  const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ทดสอบดึงข้อมูลจากตาราง p
+  async function testSupabase() {
+    let { data, error } = await _supabase.from('p').select('*');
+    console.log('ข้อมูลจาก Supabase:', data);
+  }
+  testSupabase();
+</script>
