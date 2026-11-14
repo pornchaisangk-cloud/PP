@@ -1876,52 +1876,45 @@ lucide.createIcons();
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-  // 1. ตั้งค่าการเชื่อมต่อ Supabase
-  const SUPABASE_URL = 'https://daivjnpnmwythsivtqer.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhaXZqbnBubXd5dGhzaXZ0cWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NDA2OTYsImV4cCI6MjExMDIxNjY5Nn0.miK_4_GYe3gkus3L8V2_-UqCzHlDxDDll3JextWwQjk';
-  const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  (async function initAutoSync() {
+    const SUPABASE_URL = 'https://daivjnpnmwythsivtqer.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhaXZqbnBubXd5dGhzaXZ0cWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NDA2OTYsImV4cCI6MjExMDIxNjY5Nn0.miK_4_GYe3gkus3L8V2_-UqCzHlDxDDll3JextWwQjk';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // 2. ฟังก์ชันกลางสำหรับบันทึกข้อมูลแต่ละหมวดหมู่ (Sync to Supabase)
-  async function saveDashboardData(categoryKey, payloadData) {
-    try {
-      // บันทึกหรืออัปเดตข้อมูลลงตาราง p โดยแยกตาม category_key
-      const { data, error } = await _supabase
-        .from('p')
-        .upsert({ 
-          id: categoryKey, // ใช้ category_key เป็น ID เพื่อจำแนกหมวดหมู่
-          data: payloadData,
-          updated_at: new Date()
-        }, { onConflict: 'id' });
-
-      if (error) console.error('Sync Error (' + categoryKey + '):', error);
-    } catch (err) {
-      console.error('Network Error:', err);
-    }
-  }
-
-  // 3. ฟังก์ชันกลางสำหรับดึงข้อมูลแต่ละหมวดหมู่ (Fetch from Supabase)
-  async function loadDashboardData(categoryKey) {
-    try {
-      const { data, error } = await _supabase
-        .from('p')
-        .select('data')
-        .eq('id', categoryKey)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Load Error (' + categoryKey + '):', error);
-        return null;
+    // 1. ดึงข้อมูลล่าสุดทั้งหมดจาก Supabase เมื่อเปิดหน้าเว็บ
+    const { data, error } = await _supabase.from('dashboard_sync').select('*');
+    if (!error && data && data.length > 0) {
+      let hasChanges = false;
+      data.forEach(row => {
+        const stringVal = typeof row.value === 'string' ? row.value : JSON.stringify(row.value);
+        if (localStorage.getItem(row.key) !== stringVal) {
+          localStorage.setItem(row.key, stringVal);
+          hasChanges = true;
+        }
+      });
+      // รีเฟรชหน้าเว็บ 1 ครั้งหากได้ข้อมูลใหม่จากเครื่องอื่น
+      if (hasChanges && !sessionStorage.getItem('synced_once')) {
+        sessionStorage.setItem('synced_once', 'true');
+        location.reload();
+        return;
       }
-      return data ? data.data : null;
-    } catch (err) {
-      console.error('Network Error:', err);
-      return null;
     }
-  }
+    sessionStorage.removeItem('synced_once');
 
-  // ตัวอย่างการใช้งานร่วมกับฟังก์ชันเดิมในเว็บของคุณ:
-  // - เมื่อมีการเพิ่ม To-Do หรืออัปเดตข้อมูล Health / Wallet ให้เรียกใช้ saveDashboardData('todos', currentTodos)
-  // - เมื่อเปิดเว็บขึ้นมา ให้เรียกใช้ loadDashboardData('todos') เพื่อดึงข้อมูลล่าสุดมาแสดงผล
-  
-  console.log('Supabase Universal Sync Initialized Successfully!');
+    // 2. ดักจับการบันทึกข้อมูลทุกหมวดหมู่ในหน้าเว็บ แล้วส่งขึ้น Supabase ทันที
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = function(key, value) {
+      originalSetItem(key, value);
+      let parsedValue = value;
+      try { parsedValue = JSON.parse(value); } catch (e) {}
+      
+      _supabase.from('dashboard_sync').upsert({
+        key: key,
+        value: parsedValue,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' }).then(({ error }) => {
+        if (error) console.error('Sync Error:', error);
+      });
+    };
+  })();
 </script>
