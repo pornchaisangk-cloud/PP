@@ -1863,6 +1863,7 @@ lucide.createIcons();
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhaXZqbnBubXd5dGhzaXZ0cWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NDA2OTYsImV4cCI6MjExMDIxNjY5Nn0.miK_4_GYe3gkus3L8V2_-UqCzHlDxDDll3JextWwQjk';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // 1. ดึงข้อมูลจาก Supabase มาใส่เครื่องทันทีที่เปิดเว็บ
     try {
       const { data, error } = await _supabase.from('dashboard_sync').select('*');
       if (!error && data && data.length > 0) {
@@ -1877,6 +1878,7 @@ lucide.createIcons();
       console.error('Fetch error:', err);
     }
 
+    // 2. ดักจับทุกการบันทึก แล้วส่งขึ้น Supabase ทันทีแบบเรียลไทม์
     const originalSetItem = localStorage.setItem.bind(localStorage);
     localStorage.setItem = function(key, value) {
       originalSetItem(key, value);
