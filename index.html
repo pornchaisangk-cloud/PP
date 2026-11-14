@@ -1904,13 +1904,18 @@ lucide.createIcons();
       if (pushErr) console.error('Initial push error:', pushErr);
     }
 
-    // 3) ดักการ save ทุกครั้งให้ส่งขึ้น Supabase
-    localStorage.setItem = function (key, value) {
-      rawSetItem(key, value);
-      sb.from('dashboard_sync')
-        .upsert({ key, value: safeParse(value), updated_at: new Date().toISOString() }, { onConflict: 'key' })
-        .then(({ error }) => { if (error) console.error('Sync error:', error); });
-    };
+ // 3) ดักการ save ทุกครั้งให้ส่งขึ้น Supabase (ดักที่ระดับ Storage เพื่อให้ทำงานบน iOS Safari ด้วย)
+const origSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function (key, value) {
+  origSetItem.call(this, key, value);
+  if (this !== localStorage) return;
+  sb.from('dashboard_sync')
+    .upsert({ key, value: safeParse(value), updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    .then(({ error }) => {
+      if (error) console.error('Sync error:', error);
+      else console.log('synced:', key);
+    });
+};
 
     // 4) reload เพื่อให้แอปแสดงข้อมูลล่าสุด แต่ไม่เกินครั้งละ 1 ครั้งใน 10 วินาที กันการวนลูป
     const lastReload = Number(sessionStorage.getItem('sync_last_reload') || 0);
