@@ -1855,41 +1855,62 @@ lucide.createIcons();
 </script>
 </body>
 </html>
-<!-- โหลดไลบรารี Supabase และระบบซิงค์ข้อมูล -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  (async function() {
-    const SUPABASE_URL = 'https://daivjnpnmwythsivtqer.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhaXZqbnBubXd5dGhzaXZ0cWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NDA2OTYsImV4cCI6MjExMDIxNjY5Nn0.miK_4_GYe3gkus3L8V2_-UqCzHlDxDDll3JextWwQjk';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+(async function () {
+  const SUPABASE_URL = 'https://daivjnpnmwythsivtqer.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhaXZqbnBubXd5dGhzaXZ0cWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NDA2OTYsImV4cCI6MjExMDIxNjY5Nn0.miK_4_GYe3gkus3L8V2_-UqCzHlDxDDll3JextWwQjk';
 
-    try {
-      const { data, error } = await _supabase.from('dashboard_sync').select('*');
-      if (!error && data && data.length > 0) {
-        data.forEach(row => {
-          if (row.key && row.value !== undefined) {
-            const valToStore = typeof row.value === 'string' ? row.value : JSON.stringify(row.value);
-            localStorage.setItem(row.key, valToStore);
-          }
-        });
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const rawSetItem = localStorage.setItem.bind(localStorage);
+
+  const safeParse = s => { try { return JSON.parse(s); } catch { return s; } };
+
+  try {
+    // 1) ดึงข้อมูลทั้งหมดจาก Supabase
+    const { data, error } = await sb.from('dashboard_sync').select('key, value');
+    if (error) throw error;
+
+    const remote = data || [];
+    const remoteKeys = new Set(remote.map(r => r.key));
+    let changed = false;
+
+    // 2) เอาค่าจาก Supabase มาลง localStorage ถ้าต่างจากเครื่องนี้
+    remote.forEach(row => {
+      if (!row.key || row.value === null || row.value === undefined) return;
+      const incoming = JSON.stringify(row.value);
+      if (localStorage.getItem(row.key) !== incoming) {
+        rawSetItem(row.key, incoming);
+        changed = true;
       }
-    } catch (err) {
-      console.error('Fetch error:', err);
+    });
+
+    // 3) ส่งข้อมูลที่มีในเครื่องนี้แต่ยังไม่มีบน Supabase ขึ้นไป (เช่น ข้อมูลจาก iPad ครั้งแรก)
+    const toPush = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!remoteKeys.has(k)) {
+        toPush.push({ key: k, value: safeParse(localStorage.getItem(k)), updated_at: new Date().toISOString() });
+      }
+    }
+    if (toPush.length) {
+      const { error: pushErr } = await sb.from('dashboard_sync').upsert(toPush, { onConflict: 'key' });
+      if (pushErr) console.error('Initial push error:', pushErr);
     }
 
-    const originalSetItem = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = function(key, value) {
-      originalSetItem(key, value);
-      let parsed = value;
-      try { parsed = JSON.parse(value); } catch(e) {}
-
-      _supabase.from('dashboard_sync').upsert({
-        key: key,
-        value: parsed,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' }).then(({ error }) => {
-        if (error) console.error('Sync Error:', error);
-      });
+    // 4) ดักทุกการ save ให้ส่งขึ้น Supabase ทันที
+    localStorage.setItem = function (key, value) {
+      rawSetItem(key, value);
+      sb.from('dashboard_sync')
+        .upsert({ key, value: safeParse(value), updated_at: new Date().toISOString() }, { onConflict: 'key' })
+        .then(({ error }) => { if (error) console.error('Sync error:', error); });
     };
-  })();
+
+    // 5) ถ้ามีข้อมูลใหม่จาก Supabase ให้โหลดหน้าใหม่ เพื่อให้แอปแสดงผลด้วยข้อมูลล่าสุด
+    if (changed) location.reload();
+
+  } catch (err) {
+    console.error('Supabase sync failed:', err);
+  }
+})();
 </script>
