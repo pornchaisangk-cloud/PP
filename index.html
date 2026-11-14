@@ -1863,69 +1863,80 @@ lucide.createIcons();
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const rawSetItem = localStorage.setItem.bind(localStorage);
-
   const safeParse = s => { try { return JSON.parse(s); } catch { return s; } };
-
-  // แปลงเป็น JSON โดยเรียง key ให้เหมือนกันเสมอ เพื่อเทียบค่าได้ถูกต้อง
   const canon = v => JSON.stringify(v, (k, val) =>
     (val && typeof val === 'object' && !Array.isArray(val))
       ? Object.keys(val).sort().reduce((o, kk) => (o[kk] = val[kk], o), {})
       : val
   );
 
-  try {
-    const { data, error } = await sb.from('dashboard_sync').select('key, value');
-    if (error) throw error;
-
-    const remote = data || [];
-    const remoteKeys = new Set(remote.map(r => r.key));
-    let changed = false;
-
-    // 1) ดึงค่าจาก Supabase ลงเครื่อง เฉพาะตัวที่ต่างจริง ๆ
-    remote.forEach(row => {
-      if (!row.key || row.value === null || row.value === undefined) return;
-      const local = localStorage.getItem(row.key);
-      if (local === null || canon(safeParse(local)) !== canon(row.value)) {
-        rawSetItem(row.key, JSON.stringify(row.value));
-        changed = true;
-      }
-    });
-
-    // 2) ส่งข้อมูลที่มีในเครื่องแต่ยังไม่มีบน Supabase ขึ้นไป
-    const toPush = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!remoteKeys.has(k)) {
-        toPush.push({ key: k, value: safeParse(localStorage.getItem(k)), updated_at: new Date().toISOString() });
-      }
+  // ดึงข้อมูลจาก Supabase ลงเครื่อง (เฉพาะค่าที่ต่างจริง)
+  let pulling = false;
+  async function pullRemote() {
+    if (pulling) return { changed: false, keys: [] };
+    pulling = true;
+    try {
+      const { data, error } = await sb.from('dashboard_sync').select('key, value');
+      if (error) throw error;
+      const rows = data || [];
+      let changed = false;
+      rows.forEach(row => {
+        if (!row.key || row.value === null || row.value === undefined) return;
+        const local = localStorage.getItem(row.key);
+        if (local === null || canon(safeParse(local)) !== canon(row.value)) {
+          rawSetItem(row.key, JSON.stringify(row.value));
+          changed = true;
+        }
+      });
+      return { changed, keys: rows.map(r => r.key) };
+    } catch (err) {
+      console.error('Pull error:', err);
+      return { changed: false, keys: [] };
+    } finally {
+      pulling = false;
     }
-    if (toPush.length) {
-      const { error: pushErr } = await sb.from('dashboard_sync').upsert(toPush, { onConflict: 'key' });
-      if (pushErr) console.error('Initial push error:', pushErr);
-    }
+  }
 
- // 3) ดักการ save ทุกครั้งให้ส่งขึ้น Supabase (ดักที่ระดับ Storage เพื่อให้ทำงานบน iOS Safari ด้วย)
-const origSetItem = Storage.prototype.setItem;
-Storage.prototype.setItem = function (key, value) {
-  origSetItem.call(this, key, value);
-  if (this !== localStorage) return;
-  sb.from('dashboard_sync')
-    .upsert({ key, value: safeParse(value), updated_at: new Date().toISOString() }, { onConflict: 'key' })
-    .then(({ error }) => {
-      if (error) console.error('Sync error:', error);
-      else console.log('synced:', key);
-    });
-};
-
-    // 4) reload เพื่อให้แอปแสดงข้อมูลล่าสุด แต่ไม่เกินครั้งละ 1 ครั้งใน 10 วินาที กันการวนลูป
-    const lastReload = Number(sessionStorage.getItem('sync_last_reload') || 0);
-    if (changed && Date.now() - lastReload > 10000) {
+  // reload เฉพาะเมื่อมีข้อมูลใหม่ และไม่เกินครั้งละ 1 ครั้งใน 10 วินาที
+  function reloadIfChanged(changed) {
+    const last = Number(sessionStorage.getItem('sync_last_reload') || 0);
+    if (changed && Date.now() - last > 10000) {
       sessionStorage.setItem('sync_last_reload', String(Date.now()));
       location.reload();
     }
-
-  } catch (err) {
-    console.error('Supabase sync failed:', err);
   }
+
+  // ตอนเปิดแอปครั้งแรก: ดึงข้อมูล แล้วส่งข้อมูลที่มีแต่ในเครื่องขึ้นไป
+  const first = await pullRemote();
+  const toPush = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!first.keys.includes(k)) {
+      toPush.push({ key: k, value: safeParse(localStorage.getItem(k)), updated_at: new Date().toISOString() });
+    }
+  }
+  if (toPush.length) {
+    const { error } = await sb.from('dashboard_sync').upsert(toPush, { onConflict: 'key' });
+    if (error) console.error('Initial push error:', error);
+  }
+  reloadIfChanged(first.changed);
+
+  // ทุกครั้งที่กลับมาเปิดหน้าจอ (สลับแอปกลับมา / ปลดล็อกเครื่อง): ดึงข้อมูลล่าสุดใหม่
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+      const r = await pullRemote();
+      reloadIfChanged(r.changed);
+    }
+  });
+
+  // ทุกครั้งที่บันทึกในเครื่อง: ส่งขึ้น Supabase
+  const origSetItem = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (key, value) {
+    origSetItem.call(this, key, value);
+    if (this !== localStorage) return;
+    sb.from('dashboard_sync')
+      .upsert({ key, value: safeParse(value), updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      .then(({ error }) => { if (error) console.error('Sync error:', error); });
+  };
 })();
 </script>
