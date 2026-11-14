@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PHORNCHAI — Personal Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    :root {
+      --bg:         #f5f5f7;
+      --card:       #ffffff;
+      --surface:    #f2f2f7;
+      --surface-h:  #e5e5ea;
+      --text:       #1d1d1f;
+      --text-m:     #6e6e73;
+      --text-l:     #86868b;
+      --border:     rgba(0, 0, 0, 0.06);
+      --accent:     #1d1d1f;
+      --blue:       #0071e3;
+      --green:      #28a745;
+      --red:        #d93829;
+      --amber:      #b26a00;
+    }
+
+    * {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    /* Apple Bento Card */
+    .bento-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.025), 0 1px 2px rgba(0, 0, 0, 0.015);
+      transition: box-shadow 0.25s ease;
+    }
+    .bento-card:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.045), 0 1px 3px rgba(0, 0, 0, 0.025);
+    }
+
+    /* Monochrome Icon Badge */
+    .icon-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      background: var(--surface);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Glass Header */
+    .apple-header {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.14); border-radius: 99px; }
+
+    /* Progress bar */
+    .pbar { transition: width 0.5s cubic-bezier(0.25, 1, 0.5, 1); }
+
+    /* Animations */
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .slide-in { animation: slideDown 0.22s ease both; }
+
+    /* Buttons & Inputs */
+    .btn { transition: all 0.15s ease; cursor: pointer; }
+    .btn:hover  { opacity: 0.85; }
+    .btn:active { transform: scale(0.96); }
+
+    .apple-input {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .apple-input:focus {
+      outline: none;
+      background: #ffffff;
+      border-color: var(--text);
+      box-shadow: 0 0 0 3px rgba(29, 29, 31, 0.08);
+    }
+
+    /* Subtle Priority badges */
+    .pri-high { background: rgba(217, 56, 41, 0.09);  color: var(--red); }
+    .pri-med  { background: rgba(178, 106, 0, 0.09);  color: var(--amber); }
+    .pri-low  { background: rgba(40, 167, 69, 0.09);  color: #1e7e34; }
+
+    /* Segmented Control */
+    .seg-control {
+      background: var(--surface);
+      padding: 3px;
+      border-radius: 12px;
+      display: inline-flex;
+      gap: 2px;
+    }
+    .seg-btn {
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border-radius: 9px;
+      color: var(--text-m);
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .seg-btn.active {
+      background: #ffffff !important;
+      color: var(--text) !important;
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Mood buttons */
+    .mood-btn {
+      background: var(--surface);
+      color: var(--text-m);
+      transition: all 0.18s ease;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+    }
+    .mood-btn:hover { background: var(--surface-h); color: var(--text); }
+    .mood-btn.active {
+      background: #1d1d1f !important;
+      color: #ffffff !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+    .mood-btn.active span { color: #ffffff !important; }
+
+    /* Energy segment */
+    .e-seg {
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .e-seg:hover { transform: scaleY(1.1); }
+
+    /* Wallet card */
+    .wallet-card {
+      background: var(--surface);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+    }
+    .wallet-card:hover { background: #ebebef; }
+    .wallet-card.selected {
+      background: #ffffff;
+      border-color: var(--text) !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Heatmap cell */
+    .hm-cell { border-radius: 2.5px; cursor: pointer; transition: transform 0.12s; }
+    .hm-cell:hover { transform: scale(1.45); z-index: 10; position: relative; }
+
+    /* Workout day cell */
+    .wk-day { transition: all 0.18s ease; cursor: pointer; }
+    .wk-day:hover { filter: brightness(0.97); }
+
+    /* Modal */
+    .modal-bg {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+    }
+  </style>
+</head>
+
+<body class="p-4 md:p-7 xl:p-9">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- ══════════ HEADER & SUMMARY BAR ══════════ -->
+    <header class="apple-header px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-2xl md:text-3xl font-bold tracking-tight" style="color:var(--text)">PHORNCHAI</h1>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full" style="background:var(--surface);color:var(--text-m)">Workspace</span>
+        </div>
+        <p id="headerDate" class="mt-0.5 text-sm font-medium" style="color:var(--text-m)"></p>
+      </div>
+
+      <!-- Quick Overview Pills -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <div class="px-3.5 py-2 rounded-2xl flex items-center gap-2" style="background:var(--surface)">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5" style="color:var(--text-m)"></i>
+          <span class="text-xs font-medium" style="color:var(--text-m)">Tasks:</span>
+          <span id="sumTasks" class="text-xs font-bold" style="color:var(--text)">0 left</span>
+        </div>
+        <div class="px-3.5 py-2 rounded-2xl flex items-center gap-2" style="background:var(--surface)">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5" style="color:var(--text-m)"></i>
+          <span class="text-xs font-medium" style="color:var(--text-m)">Habits:</span>
+          <span id="sumHabits" class="text-xs font-bold" style="color:var(--text)">0%</span>
+        </div>
+        <div class="px-3.5 py-2 rounded-2xl flex items-center gap-2" style="background:var(--surface)">
+          <i data-lucide="wallet" class="w-3.5 h-3.5" style="color:var(--text-m)"></i>
+          <span class="text-xs font-medium" style="color:var(--text-m)">Balance:</span>
+          <span id="sumBalance" class="text-xs font-bold" style="color:var(--text)">$0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══════════ MAIN BENTO GRID ══════════ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+      <!-- ─────── TO-DO LIST ─────── -->
+      <div class="bento-card p-6 flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-lg font-bold flex-1" style="color:var(--text)">To-Do List</h2>
+          <button id="clearDoneBtn" onclick="clearDoneTodos()" class="hidden btn text-xs font-semibold px-2.5 py-1 rounded-lg"
+            style="background:var(--surface);color:var(--text-m)">Clear done</button>
+          <span id="todoBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full" style="background:var(--surface);color:var(--text-m)">0 left</span>
+        </div>
+
+        <div class="flex gap-2">
+          <input id="todoInput" type="text" placeholder="Add a new task…"
+            class="apple-input flex-1 px-3.5 py-2 rounded-xl text-sm font-medium"
+            onkeydown="if(event.key==='Enter')addTodo()" />
+          <select id="todoPri" class="apple-input px-2.5 py-2 rounded-xl text-xs font-semibold cursor-pointer">
+            <option value="high">High</option>
+            <option value="med" selected>Med</option>
+            <option value="low">Low</option>
+          </select>
+          <button onclick="addTodo()" class="btn w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style="background:var(--text)">
+            <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+          </button>
+        </div>
+
+        <ul id="todoList" class="space-y-2 max-h-72 overflow-y-auto pr-0.5 min-h-10"></ul>
+      </div>
+
+      <!-- ─────── HEALTH TRACKER (Today + 7D/Month/Year) ─────── -->
+      <div class="bento-card p-6 flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge">
+            <i data-lucide="activity" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-lg font-bold flex-1" style="color:var(--text)">Health</h2>
+          <div class="seg-control">
+            <button class="seg-btn active" id="healthTab-today" onclick="setHealthMode('today')">Today</button>
+            <button class="seg-btn" id="healthTab-history" onclick="setHealthMode('history')">History</button>
+          </div>
+        </div>
+
+        <!-- TODAY VIEW -->
+        <div id="healthTodayView" class="flex flex-col gap-4">
+          <!-- Calories -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-m)">Calories</span>
+              <button onclick="editGoal('cal')" id="calLabel" class="btn text-xs font-bold hover:underline" style="color:var(--text)" title="Click to edit goal">0 / 2,000 kcal</button>
+            </div>
+            <div class="w-full h-2 rounded-full mb-2" style="background:var(--surface);">
+              <div id="calBar" class="h-2 rounded-full pbar" style="width:0%;background:var(--text)"></div>
+            </div>
+            <div class="flex gap-1.5">
+              <input id="calInput" type="number" min="0" placeholder="kcal…"
+                class="apple-input w-24 px-3 py-1.5 rounded-xl text-xs font-medium"
+                onkeydown="if(event.key==='Enter')addCalories()" />
+              <button onclick="addCalories()" class="btn px-3 py-1.5 rounded-xl text-xs font-semibold text-white"
+                style="background:var(--text)">Add</button>
+              <button onclick="quickCal(100)" class="btn px-2 py-1.5 rounded-xl text-xs font-semibold" style="background:var(--surface);color:var(--text-m)">+100</button>
+              <button onclick="quickCal(300)" class="btn px-2 py-1.5 rounded-xl text-xs font-semibold" style="background:var(--surface);color:var(--text-m)">+300</button>
+              <button onclick="quickCal(500)" class="btn px-2 py-1.5 rounded-xl text-xs font-semibold" style="background:var(--surface);color:var(--text-m)">+500</button>
+              <button onclick="resetCalories()" class="btn w-7 h-7 rounded-xl text-xs font-bold ml-auto flex items-center justify-center"
+                style="background:var(--surface);color:var(--text-l)" title="Reset">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Water -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-m)">Water</span>
+              <button onclick="editGoal('water')" id="waterLabel" class="btn text-xs font-bold hover:underline" style="color:var(--text)" title="Click to edit goal">0 / 8 glasses</button>
+            </div>
+            <div class="w-full h-2 rounded-full mb-2" style="background:var(--surface);">
+              <div id="waterBar" class="h-2 rounded-full pbar" style="width:0%;background:var(--blue)"></div>
+            </div>
+            <div class="grid grid-cols-8 gap-1.5" id="waterGrid"></div>
+          </div>
+
+          <!-- Sleep -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-m)">Sleep</span>
+              <button onclick="editGoal('sleep')" id="sleepLabel" class="btn text-xs font-bold hover:underline" style="color:var(--text)" title="Click to edit goal">0 / 8 hrs</button>
+            </div>
+            <div class="w-full h-2 rounded-full mb-2" style="background:var(--surface);">
+              <div id="sleepBar" class="h-2 rounded-full pbar" style="width:0%;background:#5856d6"></div>
+            </div>
+            <div class="flex gap-1.5">
+              <input id="sleepInput" type="number" min="0" max="16" step="0.5" placeholder="Hrs…"
+                class="apple-input w-20 px-3 py-1.5 rounded-xl text-xs font-medium"
+                onkeydown="if(event.key==='Enter')logSleep()" />
+              <button onclick="logSleep()" class="btn px-3 py-1.5 rounded-xl text-xs font-semibold text-white"
+                style="background:var(--text)">Log</button>
+              <button onclick="quickSleep(6)" class="btn px-2.5 py-1.5 rounded-xl text-xs font-semibold" style="background:var(--surface);color:var(--text-m)">6h</button>
+              <button onclick="quickSleep(7)" class="btn px-2.5 py-1.5 rounded-xl text-xs font-semibold" style="background:var(--surface);color:var(--text-m)">7h</button>
+              <button onclick="quickSleep(8)" class="btn px-2.5 py-1.5 rounded-xl text-xs font-semibold" style="background:var(--surface);color:var(--text-m)">8h</button>
+              <button onclick="resetSleep()" class="btn w-7 h-7 rounded-xl text-xs font-bold ml-auto flex items-center justify-center"
+                style="background:var(--surface);color:var(--text-l)" title="Reset">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sweet Drinks -->
+          <div class="pt-2 border-t" style="border-color:var(--border)">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-m)">Sweet Drinks</span>
+              <span id="sweetMsg" class="text-xs font-semibold px-2.5 py-0.5 rounded-full">None today</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <button onclick="adjSweet(-1)" class="btn w-8 h-8 rounded-xl text-base font-bold flex items-center justify-center"
+                style="background:var(--surface);color:var(--text)">−</button>
+              <div class="flex-1 flex items-center gap-1.5 flex-wrap" id="sweetDots"></div>
+              <button onclick="adjSweet(1)" class="btn w-8 h-8 rounded-xl text-base font-bold flex items-center justify-center"
+                style="background:var(--surface);color:var(--text)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HISTORY VIEW -->
+        <div id="healthHistoryView" class="hidden flex-col gap-3 slide-in"></div>
+      </div>
+
+      <!-- ─────── STATE OF MIND (Today + 7D/Month/Year) ─────── -->
+      <div class="bento-card p-6 flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge">
+            <i data-lucide="sun" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-lg font-bold flex-1" style="color:var(--text)">State of Mind</h2>
+          <div class="seg-control">
+            <button class="seg-btn active" id="moodTab-today" onclick="setMoodMode('today')">Today</button>
+            <button class="seg-btn" id="moodTab-history" onclick="setMoodMode('history')">History</button>
+          </div>
+        </div>
+
+        <!-- TODAY VIEW -->
+        <div id="moodTodayView" class="flex flex-col gap-3.5">
+          <p class="text-xs font-semibold uppercase tracking-wider -mb-1" style="color:var(--text-m)">Current Mood</p>
+          <div id="moodGrid" class="grid grid-cols-5 gap-2"></div>
+          <div id="moodMsg" class="text-center text-xs font-medium py-1.5 rounded-xl" style="background:var(--surface);color:var(--text-m)">Select a state of mind</div>
+
+          <p class="text-xs font-semibold uppercase tracking-wider -mb-1 mt-1" style="color:var(--text-m)">Energy Level</p>
+          <div id="energyGrid" class="flex gap-1.5 items-end" style="height:44px"></div>
+          <div class="flex justify-between text-xs font-medium -mt-1" style="color:var(--text-l)">
+            <span>Low</span><span>Peak</span>
+          </div>
+        </div>
+
+        <!-- HISTORY VIEW -->
+        <div id="moodHistoryView" class="hidden flex-col gap-3 slide-in"></div>
+      </div>
+
+      <!-- ─────── DAILY HABITS (Today + 7D/Month/Year) ─────── -->
+      <div class="bento-card p-6 flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-lg font-bold flex-1" style="color:var(--text)">Daily Habits</h2>
+          <div class="seg-control">
+            <button class="seg-btn active" id="habitTab-today" onclick="setHabitMode('today')">Today</button>
+            <button class="seg-btn" id="habitTab-history" onclick="setHabitMode('history')">History</button>
+          </div>
+        </div>
+
+        <!-- TODAY VIEW -->
+        <div id="habitTodayView" class="flex flex-col gap-3.5">
+          <div class="flex items-center gap-2.5">
+            <div class="flex-1 h-2 rounded-full" style="background:var(--surface);">
+              <div id="habitBar" class="h-2 rounded-full pbar" style="width:0%;background:var(--text)"></div>
+            </div>
+            <span id="habitCount" class="text-xs font-bold" style="color:var(--text-m)">0/0</span>
+          </div>
+
+          <!-- Minimal Vector Icon Picker + Input -->
+          <div class="space-y-2">
+            <div class="flex gap-1 overflow-x-auto pb-0.5" id="iconChips"></div>
+            <div class="flex gap-2">
+              <div id="selectedHabitIconPreview" class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:var(--surface);color:var(--text)">
+                <i data-lucide="sun" class="w-4 h-4"></i>
+              </div>
+              <input id="habitNameIn" type="text" placeholder="New daily habit…"
+                class="apple-input flex-1 px-3 py-2 rounded-xl text-sm font-medium"
+                onkeydown="if(event.key==='Enter')addHabit()" />
+              <button onclick="addHabit()" class="btn w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style="background:var(--text)">
+                <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="habitList" class="space-y-2 max-h-56 overflow-y-auto pr-0.5"></div>
+        </div>
+
+        <!-- HISTORY VIEW -->
+        <div id="habitHistoryView" class="hidden flex-col gap-3 slide-in"></div>
+      </div>
+
+      <!-- ─────── WORKOUT + CALENDAR (xl:col-span-2) ─────── -->
+      <div class="bento-card p-6 flex flex-col gap-4 xl:col-span-2">
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="icon-badge">
+            <i data-lucide="dumbbell" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-lg font-bold flex-1" style="color:var(--text)">Fitness & Activity</h2>
+          <!-- Segmented Control -->
+          <div class="seg-control">
+            <button class="seg-btn" onclick="setCalView('daily')" id="tab-daily">Daily</button>
+            <button class="seg-btn active" onclick="setCalView('weekly')" id="tab-weekly">Weekly</button>
+            <button class="seg-btn" onclick="setCalView('monthly')" id="tab-monthly">Monthly</button>
+            <button class="seg-btn" onclick="setCalView('yearly')" id="tab-yearly">Yearly</button>
+          </div>
+        </div>
+
+        <div id="calView" class="min-h-40"></div>
+
+        <!-- Stats row -->
+        <div class="grid grid-cols-3 gap-3 pt-1">
+          <div class="rounded-2xl p-3.5" style="background:var(--surface);">
+            <div class="text-xs font-medium" style="color:var(--text-m)">This Week</div>
+            <div id="wkStatWeek" class="text-lg font-bold mt-0.5" style="color:var(--text)">0/7</div>
+          </div>
+          <div class="rounded-2xl p-3.5" style="background:var(--surface);">
+            <div class="text-xs font-medium" style="color:var(--text-m)">Current Streak</div>
+            <div id="wkStatStreak" class="text-lg font-bold mt-0.5" style="color:var(--text)">0 days</div>
+          </div>
+          <div class="rounded-2xl p-3.5" style="background:var(--surface);">
+            <div class="text-xs font-medium" style="color:var(--text-m)">Longest Streak</div>
+            <div id="wkStatBest" class="text-lg font-bold mt-0.5" style="color:var(--text)">0 days</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────── MULTI-WALLET FINANCE (full width) ─────── -->
+      <div class="bento-card p-6 flex flex-col gap-4 md:col-span-2 xl:col-span-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="icon-badge">
+            <i data-lucide="wallet" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-lg font-bold flex-1" style="color:var(--text)">Wallet & Accounts</h2>
+          <button onclick="openWalletModal(null)" class="btn flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white"
+            style="background:var(--text)">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Account
+          </button>
+        </div>
+
+        <div id="walletCards" class="flex gap-3 overflow-x-auto pb-1 min-h-24"></div>
+        <div id="walletDetail"></div>
+      </div>
+
+    </div><!-- /grid -->
+
+    <!-- ══════════ FOOTER & DATA BACKUP ══════════ -->
+    <footer class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 pb-4 text-xs font-medium" style="color:var(--text-l)">
+      <div>Designed for clarity and daily focus.</div>
+      <div class="flex items-center gap-2">
+        <button onclick="exportData()" class="btn px-3 py-1.5 rounded-xl font-semibold" style="background:var(--card);border:1px solid var(--border);color:var(--text-m)">Export Backup</button>
+        <label class="btn px-3 py-1.5 rounded-xl font-semibold cursor-pointer" style="background:var(--card);border:1px solid var(--border);color:var(--text-m)">
+          Import Backup
+          <input type="file" accept=".json" class="hidden" onchange="importData(event)" />
+        </label>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ══════ WALLET MODAL ══════ -->
+  <div id="walletModal" class="modal-bg hidden" onclick="if(event.target===this)closeWalletModal()">
+    <div class="bento-card p-6 w-full max-w-sm mx-4 space-y-4 shadow-2xl">
+      <h3 id="wModalTitle" class="text-base font-bold" style="color:var(--text)">New Account</h3>
+      <input id="wName" type="text" placeholder="Account name (e.g. Savings)"
+        class="apple-input w-full px-3.5 py-2.5 rounded-xl text-sm font-medium" />
+      <input id="wInitBal" type="number" placeholder="Initial balance (0)"
+        class="apple-input w-full px-3.5 py-2.5 rounded-xl text-sm font-medium" />
+      <div>
+        <p class="text-xs font-semibold mb-2" style="color:var(--text-m)">Tag Color</p>
+        <div id="wColorPicker" class="flex gap-2.5 flex-wrap"></div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeWalletModal()" class="btn flex-1 py-2.5 rounded-xl text-xs font-semibold"
+          style="background:var(--surface);color:var(--text-m)">Cancel</button>
+        <button onclick="saveWallet()" class="btn flex-1 py-2.5 rounded-xl text-xs font-semibold text-white"
+          style="background:var(--text)">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ WORKOUT EDIT MODAL ══════ -->
+  <div id="workoutModal" class="modal-bg hidden" onclick="if(event.target===this)closeWorkoutModal()">
+    <div class="bento-card p-6 w-full max-w-sm mx-4 space-y-4 shadow-2xl">
+      <h3 id="wkModalTitle" class="text-base font-bold" style="color:var(--text)">Edit Workout</h3>
+      <input id="wkName" type="text" placeholder="Workout title"
+        class="apple-input w-full px-3.5 py-2.5 rounded-xl text-sm font-medium" />
+      <textarea id="wkDetail" rows="3" placeholder="Exercises, sets, duration…"
+        class="apple-input w-full px-3.5 py-2.5 rounded-xl text-sm font-medium resize-none"></textarea>
+      <div class="flex gap-2 pt-1">
+        <button onclick="closeWorkoutModal()" class="btn flex-1 py-2.5 rounded-xl text-xs font-semibold"
+          style="background:var(--surface);color:var(--text-m)">Cancel</button>
+        <button onclick="saveWorkoutEdit()" class="btn flex-1 py-2.5 rounded-xl text-xs font-semibold text-white"
+          style="background:var(--text)">Save</button>
+      </div>
+    </div>
+  </div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ── Utils ── */
+const $  = id => document.getElementById(id);
+const ls = {
+  get: k  => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v))
+};
+const clamp  = (v,a,b) => Math.min(Math.max(v,a),b);
+const fmt    = n => Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+const uid    = () => 'id' + Date.now() + Math.random().toString(36).slice(2);
+const dateKey= d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const stripEmoji = str => str.replace(/[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+
+const today    = new Date();
+const todayKey = dateKey(today);
+const todayDow = (today.getDay()+6)%7; // 0=Mon … 6=Sun
+const SHORT_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MN_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ── Daily Auto-Reset State ── */
+let dailyData = ls.get('daily_' + todayKey) || {
+  cal: 0, water: 0, sleep: 0, sweet: 0, mood: null, energy: 0, habitsDone: {}
+};
+function saveDaily() { ls.set('daily_' + todayKey, dailyData); }
+
+/* ── Helper: Get Record for Any Date Key ── */
+function getDailyRecord(dk) {
+  if (dk === todayKey) return dailyData;
+  return ls.get('daily_' + dk) || { cal: 0, water: 0, sleep: 0, sweet: 0, mood: null, energy: 0, habitsDone: {} };
+}
+
+function getLastNDays(n = 7) {
+  const days = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dk = dateKey(d);
+    days.push({
+      date: d, key: dk, label: SHORT_DAYS[d.getDay()], dayNum: d.getDate(),
+      isToday: dk === todayKey, data: getDailyRecord(dk)
+    });
+  }
+  return days;
+}
+
+/* ── Reusable Mini Yearly Heatmap Builder ── */
+function buildMiniHeatmap(yr, getIntensityFn, getTitleFn) {
+  const start = new Date(yr, 0, 1);
+  const end   = new Date(yr, 11, 31);
+  const startDow = (start.getDay() + 6) % 7;
+
+  const cells = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) cells.push(new Date(d));
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+
+  const monthStarts = {};
+  weeks.forEach((wk, wi) => {
+    const fd = wk.find(d => d);
+    if (fd) { const m = fd.getMonth(); if (!(m in monthStarts)) monthStarts[m] = wi; }
+  });
+
+  const SHADES = ['#e5e5ea', '#b0b0b5', '#6e6e73', '#1d1d1f']; // level 0..3
+
+  let monthRow = '<div style="display:flex;gap:2.5px;margin-bottom:3px;">';
+  weeks.forEach((_, wi) => {
+    const label = Object.entries(monthStarts).find(([, v]) => v === wi);
+    monthRow += `<div style="width:9px;min-width:9px;font-size:8px;font-weight:600;color:var(--text-l);">${label ? MN_SHORT[label[0]] : ''}</div>`;
+  });
+  monthRow += '</div>';
+
+  let grid = '<div style="display:flex;gap:2.5px;">';
+  weeks.forEach(wk => {
+    grid += '<div style="display:flex;flex-direction:column;gap:2.5px;">';
+    wk.forEach(d => {
+      if (!d) { grid += '<div style="width:9px;height:9px;"></div>'; return; }
+      const dk = dateKey(d), future = d > today;
+      const lvl = future ? -1 : getIntensityFn(dk);
+      const bg = future ? '#f2f2f7' : SHADES[clamp(lvl, 0, 3)];
+      grid += `<div class="hm-cell" style="width:9px;height:9px;background:${bg};" title="${getTitleFn(dk)}"></div>`;
+    });
+    grid += '</div>';
+  });
+  grid += '</div>';
+
+  return `
+    <div style="overflow-x:auto;padding-bottom:4px;">
+      <div style="display:inline-block;min-width:max-content;">
+        ${monthRow}
+        ${grid}
+      </div>
+    </div>`;
+}
+
+/* ── Date Header ── */
+(()=>{
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  $('headerDate').textContent = `${DAYS[today.getDay()]}, ${MONTH_NAMES[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
+})();
+
+/* ── Goals State ── */
+let goals = ls.get('userGoals') || { cal: 2000, water: 8, sleep: 8 };
+function saveGoals() { ls.set('userGoals', goals); }
+
+function editGoal(type) {
+  const labels = { cal: 'Daily Calorie Goal (kcal)', water: 'Daily Water Goal (glasses)', sleep: 'Daily Sleep Goal (hours)' };
+  const val = prompt(labels[type], goals[type]);
+  const num = parseFloat(val);
+  if (!isNaN(num) && num > 0) {
+    goals[type] = num;
+    saveGoals();
+    if (type === 'cal') renderCal();
+    if (type === 'water') { buildWaterGrid(); renderWater(); }
+    if (type === 'sleep') renderSleep();
+  }
+}
+
+/* ════════════════════════════════════
+   TO-DO LIST
+════════════════════════════════════ */
+let todos = ls.get('todos_apple') || ls.get('todos3') || [];
+const PRI_ORDER = {high:0, med:1, low:2};
+const PRI_LABEL = {high:'High', med:'Med', low:'Low'};
+const PRI_CSS   = {high:'pri-high', med:'pri-med', low:'pri-low'};
+
+function saveTodos(){ ls.set('todos_apple', todos); }
+
+function renderTodos(){
+  const left = todos.filter(t => !t.done).length;
+  const doneCount = todos.length - left;
+  $('todoBadge').textContent = `${left} left`;
+  $('sumTasks').textContent = `${left} left`;
+  $('clearDoneBtn').classList.toggle('hidden', doneCount === 0);
+
+  const ul = $('todoList');
+  if(!todos.length){
+    ul.innerHTML = `<li class="text-center text-xs py-6 font-medium" style="color:var(--text-l)">All clear. Add a task above.</li>`;
+    return;
+  }
+  const sorted = todos.map((t,i)=>({...t,_i:i})).sort((a,b) => a.done-b.done || PRI_ORDER[a.pri]-PRI_ORDER[b.pri]);
+  ul.innerHTML = sorted.map(t => `
+    <li class="slide-in flex items-center gap-2.5 px-3 py-2.5 rounded-xl group" style="background:var(--surface);">
+      <button onclick="toggleTodo(${t._i})" class="btn flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center"
+        style="border-color:${t.done?'var(--text)':'#c7c7cc'};background:${t.done?'var(--text)':'#ffffff'}">
+        ${t.done ? `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20,6 9,17 4,12"/></svg>` : ''}
+      </button>
+      <span class="flex-1 text-sm font-medium ${t.done?'line-through opacity-40':''}" style="color:var(--text)">${t.text}</span>
+      <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md flex-shrink-0 ${PRI_CSS[t.pri]}">${PRI_LABEL[t.pri]}</span>
+      <button onclick="deleteTodo(${t._i})" class="btn opacity-35 hover:opacity-100 w-6 h-6 rounded-lg flex items-center justify-center"
+        style="color:var(--text-m)" title="Delete">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </li>`).join('');
+}
+
+function addTodo(){
+  const t = $('todoInput').value.trim();
+  if(!t) return;
+  todos.unshift({text:t, done:false, pri:$('todoPri').value});
+  $('todoInput').value = '';
+  saveTodos(); renderTodos();
+}
+function toggleTodo(i){ todos[i].done = !todos[i].done; saveTodos(); renderTodos(); }
+function deleteTodo(i){ todos.splice(i,1); saveTodos(); renderTodos(); }
+function clearDoneTodos(){ todos = todos.filter(t => !t.done); saveTodos(); renderTodos(); }
+renderTodos();
+
+/* ════════════════════════════════════
+   HEALTH: TODAY & 7D / MONTH / YEAR
+════════════════════════════════════ */
+let healthMetric = 'cal';
+let healthRange  = '7d'; // '7d' | 'month' | 'year'
+let healthCalM   = today.getMonth();
+let healthCalY   = today.getFullYear();
+
+function setHealthMode(mode) {
+  $('healthTab-today').classList.toggle('active', mode === 'today');
+  $('healthTab-history').classList.toggle('active', mode === 'history');
+  $('healthTodayView').classList.toggle('hidden', mode !== 'today');
+  $('healthHistoryView').classList.toggle('hidden', mode !== 'history');
+  $('healthHistoryView').classList.toggle('flex', mode === 'history');
+  if (mode === 'history') renderHealthHistory();
+}
+
+function setHealthMetric(m) { healthMetric = m; renderHealthHistory(); }
+function setHealthRange(r)  { healthRange = r;  renderHealthHistory(); }
+function adjHealthMonth(d)  {
+  healthCalM += d;
+  if (healthCalM > 11) { healthCalM = 0; healthCalY++; }
+  if (healthCalM < 0)  { healthCalM = 11; healthCalY--; }
+  renderHealthHistory();
+}
+
+function renderHealthHistory() {
+  const cfg = {
+    cal:   { key: 'cal',   goal: goals.cal,   color: '#1d1d1f', unit: 'kcal', label: 'Calories' },
+    water: { key: 'water', goal: goals.water, color: '#0071e3', unit: 'gl',   label: 'Water' },
+    sleep: { key: 'sleep', goal: goals.sleep, color: '#5856d6', unit: 'h',    label: 'Sleep' },
+    sweet: { key: 'sweet', goal: 2,           color: '#b26a00', unit: '',     label: 'Sweet' }
+  }[healthMetric];
+
+  const topControls = `
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex gap-1">
+        ${['cal','water','sleep','sweet'].map(id => {
+          const names = {cal:'Cal', water:'Water', sleep:'Sleep', sweet:'Sweet'};
+          return `<button onclick="setHealthMetric('${id}')" class="btn px-2.5 py-1 rounded-lg text-[11px] font-semibold"
+            style="background:${healthMetric===id?'var(--text)':'var(--surface)'};color:${healthMetric===id?'#ffffff':'var(--text-m)'}">${names[id]}</button>`;
+        }).join('')}
+      </div>
+      <div class="seg-control">
+        ${[{id:'7d',l:'7D'},{id:'month',l:'Month'},{id:'year',l:'Year'}].map(r =>
+          `<button onclick="setHealthRange('${r.id}')" class="seg-btn ${healthRange===r.id?'active':''}" style="padding:3px 8px;">${r.l}</button>`
+        ).join('')}
+      </div>
+    </div>`;
+
+  let bodyHtml = '';
+
+  if (healthRange === '7d') {
+    const days = getLastNDays(7);
+    const active = days.filter(d => (d.data[cfg.key] || 0) > 0);
+    const avg = active.length ? (days.reduce((s, d) => s + (d.data[cfg.key] || 0), 0) / active.length).toFixed(healthMetric==='cal'?0:1) : '0';
+    const maxVal = Math.max(cfg.goal, ...days.map(d => d.data[cfg.key] || 0), 1);
+
+    bodyHtml = `
+      <div class="rounded-2xl p-4" style="background:var(--surface)">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <div class="text-xs font-bold" style="color:var(--text)">Last 7 Days — ${cfg.label}</div>
+            <div class="text-[11px]" style="color:var(--text-m)">7-Day Avg: <b>${fmt(avg)} ${cfg.unit}</b></div>
+          </div>
+          <span class="text-[11px] font-medium" style="color:var(--text-l)">Goal: ${fmt(cfg.goal)} ${cfg.unit}</span>
+        </div>
+        <div class="grid grid-cols-7 gap-2 items-end h-32 pt-4">
+          ${days.map(d => {
+            const val = d.data[cfg.key] || 0;
+            const pct = Math.min(Math.round((val / maxVal) * 100), 100);
+            return `
+              <div class="flex flex-col items-center h-full justify-end gap-1.5">
+                <span class="text-[10px] font-bold" style="color:${val>0?'var(--text)':'var(--text-l)'}">${val > 0 ? fmt(val) : '–'}</span>
+                <div class="w-full max-w-[24px] rounded-lg flex items-end overflow-hidden" style="height:74px;background:rgba(0,0,0,0.04)">
+                  <div class="w-full rounded-lg transition-all duration-300" style="height:${pct}%;background:${val>0?cfg.color:'transparent'}"></div>
+                </div>
+                <span class="text-[10px] font-semibold" style="color:${d.isToday?'var(--text)':'var(--text-l)'}">${d.isToday?'Today':d.label}</span>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  } else if (healthRange === 'month') {
+    const first = new Date(healthCalY, healthCalM, 1);
+    const last  = new Date(healthCalY, healthCalM + 1, 0);
+    const startDow = (first.getDay() + 6) % 7;
+
+    let monthSum = 0, loggedDays = 0;
+    for (let d = 1; d <= last.getDate(); d++) {
+      const val = getDailyRecord(dateKey(new Date(healthCalY, healthCalM, d)))[cfg.key] || 0;
+      if (val > 0) { monthSum += val; loggedDays++; }
+    }
+    const monthAvg = loggedDays ? (monthSum / loggedDays).toFixed(healthMetric==='cal'?0:1) : '0';
+
+    let cells = '';
+    for (let i = 0; i < startDow; i++) cells += `<div></div>`;
+    for (let d = 1; d <= last.getDate(); d++) {
+      const dk = dateKey(new Date(healthCalY, healthCalM, d));
+      const val = getDailyRecord(dk)[cfg.key] || 0;
+      const hitGoal = healthMetric === 'sweet' ? (val === 0 && getDailyRecord(dk).cal > 0) : (val >= cfg.goal);
+      const isT = dk === todayKey;
+      cells += `
+        <div class="h-10 rounded-xl flex flex-col items-center justify-center"
+          style="background:${hitGoal?'var(--text)':val>0?'#ffffff':'var(--surface)'};
+                 color:${hitGoal?'#ffffff':'var(--text)'};
+                 border:1.5px solid ${isT?'var(--text)':'transparent'};">
+          <span class="text-[10px] font-medium" style="opacity:${hitGoal?'0.8':'0.6'}">${d}</span>
+          <span class="text-[10px] font-bold leading-tight">${val > 0 ? fmt(val) : '–'}</span>
+        </div>`;
+    }
+
+    bodyHtml = `
+      <div class="rounded-2xl p-3.5 space-y-2.5" style="background:var(--surface)">
+        <div class="flex items-center justify-between">
+          <button onclick="adjHealthMonth(-1)" class="btn w-6 h-6 rounded-lg font-bold" style="background:#ffffff">‹</button>
+          <div class="text-center">
+            <div class="text-xs font-bold" style="color:var(--text)">${MONTH_NAMES[healthCalM]} ${healthCalY}</div>
+            <div class="text-[10px]" style="color:var(--text-m)">Avg: ${fmt(monthAvg)} ${cfg.unit} (${loggedDays}d logged)</div>
+          </div>
+          <button onclick="adjHealthMonth(1)" class="btn w-6 h-6 rounded-lg font-bold" style="background:#ffffff">›</button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold" style="color:var(--text-l)">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="grid grid-cols-7 gap-1">${cells}</div>
+      </div>`;
+  } else {
+    const yr = today.getFullYear();
+    let activeDays = 0;
+    const hm = buildMiniHeatmap(yr, dk => {
+      const val = getDailyRecord(dk)[cfg.key] || 0;
+      if (val <= 0) return 0;
+      activeDays++;
+      const ratio = val / cfg.goal;
+      return ratio >= 1 ? 3 : ratio >= 0.5 ? 2 : 1;
+    }, dk => {
+      const val = getDailyRecord(dk)[cfg.key] || 0;
+      return `${dk}: ${fmt(val)} ${cfg.unit}`;
+    });
+
+    bodyHtml = `
+      <div class="rounded-2xl p-4 space-y-2" style="background:var(--surface)">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold" style="color:var(--text)">${yr} — ${cfg.label}</span>
+          <span class="text-[11px] font-medium" style="color:var(--text-m)">${activeDays} days logged</span>
+        </div>
+        ${hm}
+      </div>`;
+  }
+
+  $('healthHistoryView').innerHTML = topControls + bodyHtml;
+}
+
+function renderCal(){
+  $('calBar').style.width = clamp(dailyData.cal / goals.cal * 100, 0, 100) + '%';
+  $('calLabel').textContent = `${fmt(dailyData.cal)} / ${fmt(goals.cal)} kcal`;
+}
+function addCalories(){
+  const v = parseFloat($('calInput').value);
+  if(!v || v<=0) return;
+  dailyData.cal = Math.min(dailyData.cal + v, goals.cal * 2);
+  $('calInput').value = '';
+  saveDaily(); renderCal();
+}
+function quickCal(v){
+  dailyData.cal = Math.min(dailyData.cal + v, goals.cal * 2);
+  saveDaily(); renderCal();
+}
+function resetCalories(){ dailyData.cal = 0; saveDaily(); renderCal(); }
+renderCal();
+
+/* Water */
+function buildWaterGrid(){
+  const g = $('waterGrid');
+  g.innerHTML = '';
+  const count = Math.min(Math.max(Math.round(goals.water), 1), 16);
+  g.style.gridTemplateColumns = `repeat(${Math.min(count, 8)}, minmax(0, 1fr))`;
+  for(let i=0; i<count; i++){
+    const b = document.createElement('button');
+    b.id = `wg-${i}`;
+    b.className = 'btn w-full h-8 rounded-lg flex items-center justify-center';
+    b.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`;
+    b.onclick = () => toggleWater(i);
+    g.appendChild(b);
+  }
+}
+function renderWater(){
+  const maxG = Math.min(Math.max(Math.round(goals.water), 1), 16);
+  $('waterBar').style.width = clamp(dailyData.water / goals.water * 100, 0, 100) + '%';
+  $('waterLabel').textContent = `${dailyData.water} / ${goals.water} glasses`;
+  for(let i=0; i<maxG; i++){
+    const b = $(`wg-${i}`);
+    if(b) {
+      const active = i < dailyData.water;
+      b.style.background = active ? 'rgba(0, 113, 227, 0.12)' : 'var(--surface)';
+      b.style.color = active ? 'var(--blue)' : '#c7c7cc';
+    }
+  }
+}
+function toggleWater(i){
+  dailyData.water = (dailyData.water === i + 1) ? i : i + 1;
+  saveDaily(); renderWater();
+}
+buildWaterGrid(); renderWater();
+
+/* Sleep */
+function renderSleep(){
+  $('sleepBar').style.width = clamp(dailyData.sleep / goals.sleep * 100, 0, 100) + '%';
+  $('sleepLabel').textContent = `${dailyData.sleep} / ${goals.sleep} hrs`;
+}
+function logSleep(){
+  const v = parseFloat($('sleepInput').value);
+  if(isNaN(v) || v < 0) return;
+  dailyData.sleep = clamp(v, 0, 16);
+  $('sleepInput').value = '';
+  saveDaily(); renderSleep();
+}
+function quickSleep(hrs){
+  dailyData.sleep = hrs;
+  saveDaily(); renderSleep();
+}
+function resetSleep(){ dailyData.sleep = 0; saveDaily(); renderSleep(); }
+renderSleep();
+
+/* Sweet Drinks */
+const SWEET_MSGS = [
+  {t:'None today',    c:'rgba(40, 167, 69, 0.1)',  tc:'#1e7e34'},
+  {t:'1 glass',       c:'rgba(40, 167, 69, 0.1)',  tc:'#1e7e34'},
+  {t:'2 drinks',      c:'rgba(178, 106, 0, 0.1)',  tc:'var(--amber)'},
+  {t:'3 drinks',      c:'rgba(217, 56, 41, 0.1)',  tc:'var(--red)'},
+  {t:'High intake',   c:'rgba(217, 56, 41, 0.14)', tc:'var(--red)'},
+];
+function renderSweet(){
+  const cnt = dailyData.sweet;
+  const m = SWEET_MSGS[Math.min(cnt, SWEET_MSGS.length-1)];
+  const el = $('sweetMsg');
+  el.textContent = m.t; el.style.background = m.c; el.style.color = m.tc;
+  const dots = $('sweetDots');
+  dots.innerHTML = `<span class="text-lg font-bold mr-1.5" style="color:var(--text)">${cnt}</span>`;
+  for(let i=0; i<Math.min(cnt,8); i++){
+    const s = document.createElement('span');
+    s.style.color = 'var(--text-m)';
+    s.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 8 1.75 12.28a2 2 0 0 0 2 1.72h4.54a2 2 0 0 0 2-1.72L18 8"/><path d="M5 8h14"/><path d="M7 15a6.47 6.47 0 0 1 5 0 6.47 6.47 0 0 0 5 0"/><path d="m12 8 1-6h2"/></svg>`;
+    dots.appendChild(s);
+  }
+  if(cnt > 8){
+    const s = document.createElement('span'); s.textContent = `+${cnt-8}`;
+    s.className = 'text-xs font-bold'; s.style.color = 'var(--red)'; dots.appendChild(s);
+  }
+}
+function adjSweet(d){ dailyData.sweet = Math.max(0, dailyData.sweet + d); saveDaily(); renderSweet(); }
+renderSweet();
+
+/* ════════════════════════════════════
+   STATE OF MIND: TODAY & 7D / MONTH / YEAR
+════════════════════════════════════ */
+const MOODS=[
+  {icon:'smile',      l:'Happy'},
+  {icon:'heart',      l:'Grateful'},
+  {icon:'coffee',     l:'Calm'},
+  {icon:'target',     l:'Focused'},
+  {icon:'zap',        l:'Energized'},
+  {icon:'sparkles',   l:'Inspired'},
+  {icon:'moon',       l:'Tired'},
+  {icon:'flame',      l:'Stressed'},
+  {icon:'cloud-rain', l:'Down'},
+  {icon:'wind',       l:'Anxious'}
+];
+
+let moodRange = '7d';
+let moodCalM  = today.getMonth();
+let moodCalY  = today.getFullYear();
+
+function setMoodMode(mode) {
+  $('moodTab-today').classList.toggle('active', mode === 'today');
+  $('moodTab-history').classList.toggle('active', mode === 'history');
+  $('moodTodayView').classList.toggle('hidden', mode !== 'today');
+  $('moodHistoryView').classList.toggle('hidden', mode !== 'history');
+  $('moodHistoryView').classList.toggle('flex', mode === 'history');
+  if (mode === 'history') renderMoodHistory();
+}
+
+function setMoodRange(r) { moodRange = r; renderMoodHistory(); }
+function adjMoodMonth(d) {
+  moodCalM += d;
+  if (moodCalM > 11) { moodCalM = 0; moodCalY++; }
+  if (moodCalM < 0)  { moodCalM = 11; moodCalY--; }
+  renderMoodHistory();
+}
+
+function renderMoodHistory() {
+  const topBar = `
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-m)">Overview</span>
+      <div class="seg-control">
+        ${[{id:'7d',l:'7D'},{id:'month',l:'Month'},{id:'year',l:'Year'}].map(r =>
+          `<button onclick="setMoodRange('${r.id}')" class="seg-btn ${moodRange===r.id?'active':''}" style="padding:3px 8px;">${r.l}</button>`
+        ).join('')}
+      </div>
+    </div>`;
+
+  let bodyHtml = '';
+
+  if (moodRange === '7d') {
+    const days = getLastNDays(7);
+    const energyDays = days.filter(d => d.data.energy > 0);
+    const avgEnergy = energyDays.length
+      ? (energyDays.reduce((s, d) => s + d.data.energy, 0) / energyDays.length).toFixed(1)
+      : '–';
+
+    const moodCounts = {};
+    days.forEach(d => {
+      if (d.data.mood !== null && d.data.mood !== undefined) {
+        moodCounts[d.data.mood] = (moodCounts[d.data.mood] || 0) + 1;
+      }
+    });
+    let topMoodIdx = null, maxCount = 0;
+    Object.entries(moodCounts).forEach(([idx, cnt]) => {
+      if (cnt > maxCount) { maxCount = cnt; topMoodIdx = Number(idx); }
+    });
+    const topMoodLabel = topMoodIdx !== null ? MOODS[topMoodIdx].l : 'None yet';
+
+    bodyHtml = `
+      <div class="grid grid-cols-2 gap-2.5">
+        <div class="rounded-2xl p-3" style="background:var(--surface)">
+          <div class="text-[11px] font-medium" style="color:var(--text-m)">Avg Energy (7d)</div>
+          <div class="text-base font-bold mt-0.5" style="color:var(--text)">${avgEnergy} <span class="text-xs font-normal" style="color:var(--text-l)">/ 10</span></div>
+        </div>
+        <div class="rounded-2xl p-3" style="background:var(--surface)">
+          <div class="text-[11px] font-medium" style="color:var(--text-m)">Frequent Mood</div>
+          <div class="text-base font-bold mt-0.5 truncate" style="color:var(--text)">${topMoodLabel}</div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl p-4" style="background:var(--surface)">
+        <div class="text-xs font-bold mb-3" style="color:var(--text)">7-Day Mood & Energy Log</div>
+        <div class="grid grid-cols-7 gap-2 items-end">
+          ${days.map(d => {
+            const e = d.data.energy || 0;
+            const mIdx = d.data.mood;
+            const mObj = (mIdx !== null && mIdx !== undefined && MOODS[mIdx]) ? MOODS[mIdx] : null;
+            const pct = Math.round((e / 10) * 100);
+            return `
+              <div class="flex flex-col items-center gap-1.5">
+                <span class="text-[10px] font-bold" style="color:${e>0?'var(--text)':'var(--text-l)'}">${e > 0 ? e : '–'}</span>
+                <div class="w-full max-w-[22px] rounded-lg flex items-end overflow-hidden" style="height:60px;background:rgba(0,0,0,0.04)">
+                  <div class="w-full rounded-lg" style="height:${pct}%;background:${e>0?'var(--text)':'transparent'}"></div>
+                </div>
+                <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#ffffff;color:${mObj?'var(--text)':'var(--text-l)'}" title="${mObj?mObj.l:'No mood logged'}">
+                  <i data-lucide="${mObj ? mObj.icon : 'minus'}" class="w-3.5 h-3.5"></i>
+                </div>
+                <span class="text-[10px] font-semibold" style="color:${d.isToday?'var(--text)':'var(--text-l)'}">${d.isToday?'Today':d.label}</span>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  } else if (moodRange === 'month') {
+    const first = new Date(moodCalY, moodCalM, 1);
+    const last  = new Date(moodCalY, moodCalM + 1, 0);
+    const startDow = (first.getDay() + 6) % 7;
+
+    let cells = '';
+    for (let i = 0; i < startDow; i++) cells += `<div></div>`;
+    for (let d = 1; d <= last.getDate(); d++) {
+      const dk = dateKey(new Date(moodCalY, moodCalM, d));
+      const rec = getDailyRecord(dk);
+      const mObj = (rec.mood !== null && rec.mood !== undefined && MOODS[rec.mood]) ? MOODS[rec.mood] : null;
+      const isT = dk === todayKey;
+      cells += `
+        <div class="h-10 rounded-xl flex flex-col items-center justify-center gap-0.5"
+          style="background:${mObj?'#ffffff':'var(--surface)'};border:1.5px solid ${isT?'var(--text)':'transparent'};"
+          title="${mObj ? mObj.l + (rec.energy ? ' · Energy ' + rec.energy + '/10' : '') : 'No log'}">
+          <span class="text-[9px] font-semibold" style="color:var(--text-l)">${d}</span>
+          ${mObj ? `<i data-lucide="${mObj.icon}" class="w-3 h-3" style="color:var(--text)"></i>` : `<span class="text-[9px]" style="color:var(--text-l)">·</span>`}
+        </div>`;
+    }
+
+    bodyHtml = `
+      <div class="rounded-2xl p-3.5 space-y-2.5" style="background:var(--surface)">
+        <div class="flex items-center justify-between">
+          <button onclick="adjMoodMonth(-1)" class="btn w-6 h-6 rounded-lg font-bold" style="background:#ffffff">‹</button>
+          <span class="text-xs font-bold" style="color:var(--text)">${MONTH_NAMES[moodCalM]} ${moodCalY}</span>
+          <button onclick="adjMoodMonth(1)" class="btn w-6 h-6 rounded-lg font-bold" style="background:#ffffff">›</button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold" style="color:var(--text-l)">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="grid grid-cols-7 gap-1">${cells}</div>
+      </div>`;
+  } else {
+    const yr = today.getFullYear();
+    let loggedDays = 0;
+    const hm = buildMiniHeatmap(yr, dk => {
+      const rec = getDailyRecord(dk);
+      const e = rec.energy || 0;
+      const hasMood = rec.mood !== null && rec.mood !== undefined;
+      if (!e && !hasMood) return 0;
+      loggedDays++;
+      if (e >= 8) return 3;
+      if (e >= 5) return 2;
+      return 1;
+    }, dk => {
+      const rec = getDailyRecord(dk);
+      const mLabel = (rec.mood !== null && MOODS[rec.mood]) ? MOODS[rec.mood].l : 'No mood';
+      return `${dk}: ${mLabel} · Energy ${rec.energy || 0}/10`;
+    });
+
+    bodyHtml = `
+      <div class="rounded-2xl p-4 space-y-2" style="background:var(--surface)">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold" style="color:var(--text)">${yr} — Energy & Mood</span>
+          <span class="text-[11px] font-medium" style="color:var(--text-m)">${loggedDays} days logged</span>
+        </div>
+        ${hm}
+      </div>`;
+  }
+
+  $('moodHistoryView').innerHTML = topBar + bodyHtml;
+  lucide.createIcons();
+}
+
+function renderMoods(){
+  $('moodGrid').innerHTML = MOODS.map((m,i)=>`
+    <button class="mood-btn flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl ${dailyData.mood===i?'active':''}"
+      onclick="pickMood(${i})">
+      <i data-lucide="${m.icon}" class="w-4 h-4"></i>
+      <span class="text-[11px] font-medium" style="color:var(--text-m)">${m.l}</span>
+    </button>`).join('');
+  const msg = $('moodMsg');
+  if(dailyData.mood !== null){
+    msg.textContent = `State of Mind: ${MOODS[dailyData.mood].l}`;
+    msg.style.color = 'var(--text)';
+    msg.style.fontWeight = '600';
+  } else {
+    msg.textContent = 'Select a state of mind';
+    msg.style.color = 'var(--text-m)';
+    msg.style.fontWeight = '500';
+  }
+  lucide.createIcons();
+}
+function pickMood(i){ dailyData.mood = dailyData.mood === i ? null : i; saveDaily(); renderMoods(); }
+
+function renderEnergy(){
+  $('energyGrid').innerHTML = Array.from({length:10},(_,i)=>{
+    const h = 16 + i*2.8, a = i < dailyData.energy;
+    return `<div class="e-seg flex-1" style="height:${h}px;background:${a?'var(--text)':'var(--surface)'};" onclick="setEnergy(${i+1})"></div>`;
+  }).join('');
+}
+function setEnergy(l){ dailyData.energy = dailyData.energy === l ? 0 : l; saveDaily(); renderEnergy(); }
+renderMoods(); renderEnergy();
+
+/* ════════════════════════════════════
+   DAILY HABITS: TODAY & 7D / MONTH / YEAR
+════════════════════════════════════ */
+const HABIT_ICONS = ['sun','activity','book-open','brain','droplet','utensils','pill','check-circle','laptop','moon'];
+let selectedHabitIcon = 'sun';
+
+const DEF_HABITS = [
+  {id:'h1', icon:'sun',       name:'Morning Routine'},
+  {id:'h2', icon:'activity',  name:'Exercise'},
+  {id:'h3', icon:'book-open', name:'Read 30 mins'},
+  {id:'h4', icon:'brain',     name:'Meditate'},
+  {id:'h5', icon:'utensils',  name:'Clean Eating'},
+  {id:'h6', icon:'moon',      name:'Sleep by 11pm'},
+];
+let habitList = ls.get('habitDefs_mono') || DEF_HABITS;
+function saveHabitDefs(){ ls.set('habitDefs_mono', habitList); }
+
+let habitRange = '7d';
+let habitCalM  = today.getMonth();
+let habitCalY  = today.getFullYear();
+
+function setHabitMode(mode) {
+  $('habitTab-today').classList.toggle('active', mode === 'today');
+  $('habitTab-history').classList.toggle('active', mode === 'history');
+  $('habitTodayView').classList.toggle('hidden', mode !== 'today');
+  $('habitHistoryView').classList.toggle('hidden', mode !== 'history');
+  $('habitHistoryView').classList.toggle('flex', mode === 'history');
+  if (mode === 'history') renderHabitHistory();
+}
+
+function setHabitRange(r) { habitRange = r; renderHabitHistory(); }
+function adjHabitMonth(d) {
+  habitCalM += d;
+  if (habitCalM > 11) { habitCalM = 0; habitCalY++; }
+  if (habitCalM < 0)  { habitCalM = 11; habitCalY--; }
+  renderHabitHistory();
+}
+
+function renderHabitHistory() {
+  const topBar = `
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-m)">Consistency</span>
+      <div class="seg-control">
+        ${[{id:'7d',l:'7D'},{id:'month',l:'Month'},{id:'year',l:'Year'}].map(r =>
+          `<button onclick="setHabitRange('${r.id}')" class="seg-btn ${habitRange===r.id?'active':''}" style="padding:3px 8px;">${r.l}</button>`
+        ).join('')}
+      </div>
+    </div>`;
+
+  let bodyHtml = '';
+
+  if (habitRange === '7d') {
+    const days = getLastNDays(7);
+    const totalPossible = habitList.length * 7;
+    let totalDone = 0;
+    days.forEach(d => {
+      habitList.forEach(h => {
+        if (d.data.habitsDone && d.data.habitsDone[h.id]) totalDone++;
+      });
+    });
+    const rate = totalPossible ? Math.round((totalDone / totalPossible) * 100) : 0;
+
+    let streak = 0;
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dk = dateKey(d);
+      const rec = getDailyRecord(dk);
+      const anyDone = rec && rec.habitsDone && Object.values(rec.habitsDone).some(Boolean);
+      if (anyDone) streak++;
+      else if (i > 0) break;
+    }
+
+    bodyHtml = `
+      <div class="grid grid-cols-2 gap-2.5">
+        <div class="rounded-2xl p-3" style="background:var(--surface)">
+          <div class="text-[11px] font-medium" style="color:var(--text-m)">7-Day Completion</div>
+          <div class="text-base font-bold mt-0.5" style="color:var(--text)">${rate}%</div>
+        </div>
+        <div class="rounded-2xl p-3" style="background:var(--surface)">
+          <div class="text-[11px] font-medium" style="color:var(--text-m)">Active Streak</div>
+          <div class="text-base font-bold mt-0.5" style="color:var(--text)">${streak} day${streak!==1?'s':''}</div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl p-3.5 overflow-x-auto" style="background:var(--surface)">
+        <div class="grid grid-cols-[1fr_repeat(7,22px)] gap-1.5 items-center mb-2.5 pb-1.5 border-b" style="border-color:var(--border)">
+          <span class="text-[11px] font-bold" style="color:var(--text-m)">Habit</span>
+          ${days.map(d => `<span class="text-[10px] font-bold text-center" style="color:${d.isToday?'var(--text)':'var(--text-l)'}">${d.label[0]}</span>`).join('')}
+        </div>
+        <div class="space-y-2 max-h-44 overflow-y-auto pr-0.5">
+          ${!habitList.length ? `<p class="text-xs text-center py-3" style="color:var(--text-l)">No habits defined.</p>` :
+            habitList.map(h => `
+              <div class="grid grid-cols-[1fr_repeat(7,22px)] gap-1.5 items-center">
+                <div class="flex items-center gap-1.5 truncate pr-1">
+                  <i data-lucide="${h.icon || 'sparkles'}" class="w-3 h-3 flex-shrink-0" style="color:var(--text-m)"></i>
+                  <span class="text-xs font-medium truncate" style="color:var(--text)">${h.name}</span>
+                </div>
+                ${days.map(d => {
+                  const done = !!(d.data.habitsDone && d.data.habitsDone[h.id]);
+                  return `
+                    <div class="w-5 h-5 mx-auto rounded-full flex items-center justify-center"
+                      style="background:${done?'var(--text)':'rgba(0,0,0,0.06)'};color:#ffffff">
+                      ${done ? `<svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20,6 9,17 4,12"/></svg>` : ''}
+                    </div>`;
+                }).join('')}
+              </div>
+            `).join('')}
+        </div>
+      </div>`;
+  } else if (habitRange === 'month') {
+    const first = new Date(habitCalY, habitCalM, 1);
+    const last  = new Date(habitCalY, habitCalM + 1, 0);
+    const startDow = (first.getDay() + 6) % 7;
+    const totalH = habitList.length;
+
+    let cells = '';
+    for (let i = 0; i < startDow; i++) cells += `<div></div>`;
+    for (let d = 1; d <= last.getDate(); d++) {
+      const dk = dateKey(new Date(habitCalY, habitCalM, d));
+      const rec = getDailyRecord(dk);
+      const doneCnt = totalH ? habitList.filter(h => rec.habitsDone && rec.habitsDone[h.id]).length : 0;
+      const pct = totalH ? doneCnt / totalH : 0;
+      const isT = dk === todayKey;
+
+      let bg = 'var(--surface)', fg = 'var(--text)';
+      if (pct === 1 && totalH > 0) { bg = 'var(--text)'; fg = '#ffffff'; }
+      else if (pct >= 0.5) { bg = '#d1d1d6'; fg = 'var(--text)'; }
+      else if (doneCnt > 0) { bg = '#ffffff'; fg = 'var(--text)'; }
+
+      cells += `
+        <div class="h-10 rounded-xl flex flex-col items-center justify-center"
+          style="background:${bg};color:${fg};border:1.5px solid ${isT?'var(--text)':'transparent'};">
+          <span class="text-[9px] font-medium" style="opacity:0.75">${d}</span>
+          <span class="text-[10px] font-bold leading-tight">${doneCnt > 0 ? `${doneCnt}/${totalH}` : '–'}</span>
+        </div>`;
+    }
+
+    bodyHtml = `
+      <div class="rounded-2xl p-3.5 space-y-2.5" style="background:var(--surface)">
+        <div class="flex items-center justify-between">
+          <button onclick="adjHabitMonth(-1)" class="btn w-6 h-6 rounded-lg font-bold" style="background:#ffffff">‹</button>
+          <span class="text-xs font-bold" style="color:var(--text)">${MONTH_NAMES[habitCalM]} ${habitCalY}</span>
+          <button onclick="adjHabitMonth(1)" class="btn w-6 h-6 rounded-lg font-bold" style="background:#ffffff">›</button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold" style="color:var(--text-l)">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="grid grid-cols-7 gap-1">${cells}</div>
+      </div>`;
+  } else {
+    const yr = today.getFullYear();
+    const totalH = Math.max(habitList.length, 1);
+    let activeDays = 0;
+
+    const hm = buildMiniHeatmap(yr, dk => {
+      const rec = getDailyRecord(dk);
+      const doneCnt = habitList.filter(h => rec.habitsDone && rec.habitsDone[h.id]).length;
+      if (doneCnt <= 0) return 0;
+      activeDays++;
+      const pct = doneCnt / totalH;
+      return pct === 1 ? 3 : pct >= 0.5 ? 2 : 1;
+    }, dk => {
+      const rec = getDailyRecord(dk);
+      const doneCnt = habitList.filter(h => rec.habitsDone && rec.habitsDone[h.id]).length;
+      return `${dk}: ${doneCnt}/${habitList.length} habits`;
+    });
+
+    bodyHtml = `
+      <div class="rounded-2xl p-4 space-y-2" style="background:var(--surface)">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold" style="color:var(--text)">${yr} — Habits Consistency</span>
+          <span class="text-[11px] font-medium" style="color:var(--text-m)">${activeDays} active days</span>
+        </div>
+        ${hm}
+      </div>`;
+  }
+
+  $('habitHistoryView').innerHTML = topBar + bodyHtml;
+  lucide.createIcons();
+}
+
+function selectHabitIcon(ic) {
+  selectedHabitIcon = ic;
+  $('selectedHabitIconPreview').innerHTML = `<i data-lucide="${ic}" class="w-4 h-4"></i>`;
+  renderIconChips();
+  lucide.createIcons();
+}
+
+function renderIconChips() {
+  $('iconChips').innerHTML = HABIT_ICONS.map(ic => `
+    <button onclick="selectHabitIcon('${ic}')" class="btn w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+      style="background:${selectedHabitIcon===ic?'var(--text)':'var(--surface)'};color:${selectedHabitIcon===ic?'#ffffff':'var(--text-m)'}">
+      <i data-lucide="${ic}" class="w-3.5 h-3.5"></i>
+    </button>`
+  ).join('');
+}
+renderIconChips();
+
+function renderHabits(){
+  const total = habitList.length;
+  const done = habitList.filter(h => !!dailyData.habitsDone[h.id]).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+
+  $('habitCount').textContent = `${done}/${total}`;
+  $('habitBar').style.width = pct + '%';
+  $('sumHabits').textContent = `${pct}%`;
+
+  $('habitList').innerHTML = !habitList.length
+    ? `<p class="text-center text-xs py-4 font-medium" style="color:var(--text-l)">Add a habit above to start tracking.</p>`
+    : habitList.map((h,i)=>{
+      const isDone = !!dailyData.habitsDone[h.id];
+      const icName = h.icon || 'sparkles';
+      return `
+      <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl group"
+        style="background:var(--surface);">
+        <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#ffffff;color:${isDone?'var(--text-l)':'var(--text)'}">
+          <i data-lucide="${icName}" class="w-3.5 h-3.5"></i>
+        </div>
+        <span class="flex-1 text-sm font-medium ${isDone?'line-through opacity-45':''}" style="color:var(--text)">${h.name}</span>
+        <button onclick="toggleHabit('${h.id}')" class="btn w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+          style="background:${isDone?'var(--text)':'#ffffff'};border:1.5px solid ${isDone?'var(--text)':'#c7c7cc'};">
+          ${isDone?`<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20,6 9,17 4,12"/></svg>`:''}
+        </button>
+        <button onclick="deleteHabit(${i})" class="btn opacity-35 hover:opacity-100 w-6 h-6 rounded-lg flex items-center justify-center"
+          style="color:var(--text-m);" title="Delete">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+    }).join('');
+  lucide.createIcons();
+}
+function addHabit(){
+  const n = $('habitNameIn').value.trim();
+  if(!n) return;
+  habitList.push({id: uid(), icon: selectedHabitIcon, name: n});
+  $('habitNameIn').value = '';
+  saveHabitDefs(); renderHabits();
+}
+function toggleHabit(id){
+  dailyData.habitsDone[id] = !dailyData.habitsDone[id];
+  saveDaily(); renderHabits();
+}
+function deleteHabit(i){
+  habitList.splice(i,1);
+  saveHabitDefs(); renderHabits();
+}
+renderHabits();
+
+/* ════════════════════════════════════
+   WORKOUT + CALENDAR
+════════════════════════════════════ */
+const DOW_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DOW_ICONS  = ['dumbbell','flame','footprints','target','zap','wind','moon'];
+const DEFAULT_PLANS = [
+  {name:'Upper Body',  detail:'Push-ups · Pull-ups · Shoulder Press'},
+  {name:'Cardio',      detail:'30 min run or HIIT circuit'},
+  {name:'Lower Body',  detail:'Squats · Lunges · Deadlifts'},
+  {name:'Core',        detail:'Plank · Crunches · Russian Twist'},
+  {name:'Full Body',   detail:'Compound lifts · circuit training'},
+  {name:'Active Rest', detail:'Walk · Yoga · light stretching'},
+  {name:'Rest Day',    detail:'Recovery, hydrate & sleep well'},
+];
+let wkPlans  = ls.get('wkPlans3') || DEFAULT_PLANS;
+let wkLog    = ls.get('wkLog3')   || {};
+let calView  = 'weekly';
+let calMonth = today.getMonth();
+let calYear  = today.getFullYear();
+let editingDow = null;
+
+function saveWkPlans(){ ls.set('wkPlans3', wkPlans); }
+function saveWkLog()  { ls.set('wkLog3', wkLog); }
+function getPlan(dow) { return wkPlans[dow] || DEFAULT_PLANS[dow] || {name:'Rest',detail:''}; }
+function isCompleted(dk){ return !!(wkLog[dk]?.completed); }
+function toggleDay(dk){ if(!wkLog[dk]) wkLog[dk]={}; wkLog[dk].completed=!wkLog[dk].completed; saveWkLog(); }
+
+function setCalView(v){
+  calView = v;
+  ['daily','weekly','monthly','yearly'].forEach(id => {
+    $(`tab-${id}`).classList[id===v ? 'add' : 'remove']('active');
+  });
+  renderCalView(); renderWkStats();
+}
+function renderCalView(){
+  const map = { daily:renderDaily, weekly:renderWeekly, monthly:renderMonthly, yearly:renderYearly };
+  $('calView').innerHTML = (map[calView]||renderWeekly)();
+  lucide.createIcons();
+}
+
+function renderDaily(){
+  const plan=getPlan(todayDow), done=isCompleted(todayKey);
+  const cleanTitle = stripEmoji(plan.name) || plan.name;
+  return `
+    <div class="rounded-2xl p-4 space-y-3" style="background:var(--surface);">
+      <div class="flex items-start gap-3">
+        <div class="flex-1">
+          <div class="text-base font-bold mb-0.5" style="color:var(--text)">${cleanTitle}</div>
+          <div class="text-xs font-medium" style="color:var(--text-m)">${plan.detail||'No details yet'}</div>
+        </div>
+        <button onclick="openWorkoutModal(${todayDow})" class="btn px-3 py-1.5 rounded-xl text-xs font-semibold"
+          style="background:#ffffff;color:var(--text);border:1px solid var(--border)">Edit</button>
+      </div>
+      <button onclick="toggleDay('${todayKey}');renderCalView();renderWkStats()" class="btn w-full py-2.5 rounded-xl text-xs font-semibold"
+        style="background:${done?'var(--text)':'#ffffff'};color:${done?'#ffffff':'var(--text)'};border:1px solid ${done?'var(--text)':'var(--border)'}">
+        ${done ? 'Completed ✓ (Tap to Undo)' : 'Mark Workout Complete'}
+      </button>
+    </div>`;
+}
+
+function renderWeekly(){
+  const monday = new Date(today); monday.setDate(today.getDate()-todayDow);
+  return `<div class="grid grid-cols-7 gap-2">
+    ${DOW_LABELS.map((lbl,i)=>{
+      const d=new Date(monday); d.setDate(monday.getDate()+i);
+      const dk=dateKey(d), done=isCompleted(dk), isToday=dk===todayKey;
+      const plan=getPlan(i);
+      const cleanTitle = stripEmoji(plan.name) || plan.name;
+      const ic = DOW_ICONS[i] || 'activity';
+      return `
+        <div class="flex flex-col gap-1.5">
+          <div class="text-[11px] font-semibold text-center" style="color:${isToday?'var(--text)':'var(--text-l)'}">${lbl}</div>
+          <div class="wk-day rounded-2xl p-2.5 flex flex-col items-center gap-1.5"
+            style="background:${done?'var(--text)':isToday?'#ffffff':'var(--surface)'};
+                   color:${done?'#ffffff':'var(--text)'};
+                   border:1.5px solid ${done?'var(--text)':isToday?'var(--text)':'transparent'};"
+            onclick="toggleDay('${dk}');renderCalView();renderWkStats()">
+            <i data-lucide="${ic}" class="w-4 h-4" style="opacity:${done?'1':'0.7'}"></i>
+            <div class="text-[11px] text-center font-semibold leading-tight">${cleanTitle}</div>
+            <div class="text-[11px] font-bold" style="opacity:${done?'1':'0.4'}">${done?'✓':'○'}</div>
+          </div>
+          <button onclick="openWorkoutModal(${i})"
+            class="btn w-full py-1 rounded-lg text-[11px] font-medium"
+            style="background:var(--surface);color:var(--text-m)">Edit</button>
+        </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderMonthly(){
+  const first=new Date(calYear,calMonth,1);
+  const last=new Date(calYear,calMonth+1,0);
+  const startDow=(first.getDay()+6)%7;
+
+  let html=`
+    <div class="flex items-center justify-between mb-3">
+      <button onclick="adjMonth(-1)" class="btn w-7 h-7 rounded-lg flex items-center justify-center font-bold"
+        style="background:var(--surface);color:var(--text)">‹</button>
+      <span class="text-xs font-bold" style="color:var(--text)">${MONTH_NAMES[calMonth]} ${calYear}</span>
+      <button onclick="adjMonth(1)" class="btn w-7 h-7 rounded-lg flex items-center justify-center font-bold"
+        style="background:var(--surface);color:var(--text)">›</button>
+    </div>
+    <div class="grid grid-cols-7 gap-1 mb-1">
+      ${DOW_LABELS.map(d=>`<div class="text-[11px] font-semibold text-center py-0.5" style="color:var(--text-l)">${d[0]}</div>`).join('')}
+    </div>
+    <div class="grid grid-cols-7 gap-1">`;
+
+  for(let i=0;i<startDow;i++) html+=`<div></div>`;
+  for(let d=1;d<=last.getDate();d++){
+    const day=new Date(calYear,calMonth,d);
+    const dk=dateKey(day), done=isCompleted(dk), isT=dk===todayKey;
+    html+=`
+      <div onclick="toggleDay('${dk}');renderCalView();renderWkStats()"
+        class="btn h-9 rounded-xl flex flex-col items-center justify-center text-xs font-semibold"
+        style="background:${done?'var(--text)':isT?'#ffffff':'var(--surface)'};
+               color:${done?'#ffffff':'var(--text)'};
+               border:1.5px solid ${isT?'var(--text)':'transparent'};">
+        <span>${d}</span>
+      </div>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+function adjMonth(delta){ calMonth+=delta; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} renderCalView(); }
+
+function renderYearly(){
+  const yr = today.getFullYear();
+  const start = new Date(yr,0,1);
+  const end   = new Date(yr,11,31);
+  const startDow = (start.getDay()+6)%7;
+
+  const cells = [];
+  for(let i=0;i<startDow;i++) cells.push(null);
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) cells.push(new Date(d));
+  while(cells.length%7!==0) cells.push(null);
+
+  const weeks=[];
+  for(let i=0;i<cells.length;i+=7) weeks.push(cells.slice(i,i+7));
+
+  const doneCount = Object.keys(wkLog).filter(k=>k.startsWith(yr+'')&&wkLog[k]?.completed).length;
+
+  const monthStarts = {};
+  weeks.forEach((wk,wi)=>{
+    const fd=wk.find(d=>d);
+    if(fd){ const m=fd.getMonth(); if(!(m in monthStarts)) monthStarts[m]=wi; }
+  });
+
+  let monthRow='<div style="display:flex;gap:3px;padding-left:20px;margin-bottom:3px;">';
+  weeks.forEach((_,wi)=>{
+    const label=Object.entries(monthStarts).find(([,v])=>v===wi);
+    monthRow+=`<div style="width:13px;min-width:13px;font-size:9px;font-weight:600;color:var(--text-l);text-align:center;">${label?MN_SHORT[label[0]]:''}</div>`;
+  });
+  monthRow+='</div>';
+
+  const dayLabels=['','M','','W','','F',''].map(d=>
+    `<div style="width:13px;height:13px;font-size:8px;color:var(--text-l);font-weight:600;display:flex;align-items:center;justify-content:center;">${d}</div>`
+  ).join('');
+
+  let grid=`<div style="display:flex;gap:3px;">
+    <div style="display:flex;flex-direction:column;gap:3px;">${dayLabels}</div>`;
+
+  weeks.forEach(wk=>{
+    grid+=`<div style="display:flex;flex-direction:column;gap:3px;">`;
+    wk.forEach(d=>{
+      if(!d){ grid+=`<div style="width:13px;height:13px;"></div>`; return; }
+      const dk=dateKey(d), done=isCompleted(dk), isT=dk===todayKey, future=d>today;
+      const bg = done ? '#1d1d1f' : isT ? '#86868b' : future ? '#f2f2f7' : '#e5e5ea';
+      grid+=`<div class="hm-cell" style="width:13px;height:13px;background:${bg};"
+        onclick="toggleDay('${dk}');renderCalView();renderWkStats();" title="${dk}${done?' ✓':''}"></div>`;
+    });
+    grid+='</div>';
+  });
+  grid+='</div>';
+
+  return `
+    <div style="overflow-x:auto;">
+      <div style="display:inline-block;min-width:max-content;">
+        <div class="text-xs font-semibold mb-2" style="color:var(--text-m)">${yr} — ${doneCount} active day${doneCount!==1?'s':''}</div>
+        ${monthRow}
+        ${grid}
+      </div>
+    </div>`;
+}
+
+function renderWkStats(){
+  const mon=new Date(today); mon.setDate(today.getDate()-todayDow);
+  let wkDone=0;
+  for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(mon.getDate()+i); if(isCompleted(dateKey(d)))wkDone++; }
+  $('wkStatWeek').textContent = `${wkDone}/7`;
+
+  let streak=0, d=new Date(today);
+  while(isCompleted(dateKey(d))){ streak++; d.setDate(d.getDate()-1); }
+  $('wkStatStreak').textContent = `${streak} day${streak!==1?'s':''}`;
+
+  const keys=Object.keys(wkLog).filter(k=>wkLog[k]?.completed).sort();
+  let best=0, cur=0, prev=null;
+  keys.forEach(k=>{
+    if(prev){ const diff=(new Date(k)-new Date(prev))/(86400000); cur=diff===1?cur+1:1; } else cur=1;
+    if(cur>best) best=cur; prev=k;
+  });
+  $('wkStatBest').textContent = `${best} day${best!==1?'s':''}`;
+}
+
+function openWorkoutModal(dow){
+  editingDow = dow;
+  const plan = getPlan(dow);
+  $('wkModalTitle').textContent = `Edit ${DOW_LABELS[dow]} Routine`;
+  $('wkName').value   = stripEmoji(plan.name) || plan.name;
+  $('wkDetail').value = plan.detail;
+  $('workoutModal').classList.remove('hidden');
+}
+function closeWorkoutModal(){ $('workoutModal').classList.add('hidden'); }
+function saveWorkoutEdit(){
+  if(editingDow===null) return;
+  wkPlans[editingDow] = { name: $('wkName').value.trim()||getPlan(editingDow).name, detail: $('wkDetail').value.trim() };
+  saveWkPlans(); closeWorkoutModal(); renderCalView(); renderWkStats();
+}
+
+setCalView('weekly');
+
+/* ════════════════════════════════════
+   MULTI-WALLET FINANCE
+════════════════════════════════════ */
+const WALLET_COLORS = ['#1d1d1f','#6e6e73','#0071e3','#28a745','#5856d6','#b26a00','#d93829'];
+let wallets     = ls.get('wallets3') || [
+  {id:'w1', name:'Main Account', color:'#1d1d1f', initBal:0, txns:[]},
+  {id:'w2', name:'Savings',      color:'#6e6e73', initBal:0, txns:[]},
+];
+let selWalletId = ls.get('selWallet3') || wallets[0]?.id;
+let editWalletId= null;
+let pickedColor = WALLET_COLORS[0];
+
+function saveWallets(){ ls.set('wallets3', wallets); }
+function getWallet(id){ return wallets.find(w=>w.id===id); }
+function walletBal(w){ return (w.initBal||0) + w.txns.reduce((s,t)=>s+(t.type==='income'?t.amt:-t.amt),0); }
+
+function updateTotalBalance(){
+  const total = wallets.reduce((sum, w) => sum + walletBal(w), 0);
+  $('sumBalance').textContent = `${total < 0 ? '-' : ''}$${fmt(Math.abs(total))}`;
+}
+
+function renderWalletCards(){
+  updateTotalBalance();
+  const c=$('walletCards');
+  if(!wallets.length){
+    c.innerHTML=`<p class="text-xs font-medium py-4" style="color:var(--text-l)">No accounts yet. Click "Add Account" to begin.</p>`;
+    $('walletDetail').innerHTML=''; return;
+  }
+  c.innerHTML=wallets.map(w=>{
+    const bal=walletBal(w), sel=selWalletId===w.id;
+    return `
+      <div onclick="selWallet('${w.id}')" class="wallet-card flex-shrink-0 rounded-2xl p-4 w-44 ${sel?'selected':''}">
+        <div class="flex items-center justify-between mb-2">
+          <span class="w-2.5 h-2.5 rounded-full" style="background:${w.color}"></span>
+          <div class="flex gap-1">
+            <button onclick="event.stopPropagation();openWalletModal('${w.id}')" class="btn px-1.5 py-0.5 rounded text-[11px] font-medium"
+              style="background:var(--surface-h);color:var(--text-m)">Edit</button>
+            <button onclick="event.stopPropagation();deleteWallet('${w.id}')" class="btn px-1.5 py-0.5 rounded text-[11px] font-medium"
+              style="background:var(--surface-h);color:var(--text-m)">×</button>
+          </div>
+        </div>
+        <div class="text-xs font-semibold truncate mb-0.5" style="color:var(--text-m)">${w.name}</div>
+        <div class="text-lg font-bold tracking-tight" style="color:${bal>=0?'var(--text)':'var(--red)'}">${bal<0?'-':''}$${fmt(Math.abs(bal))}</div>
+        <div class="text-[11px] font-medium mt-0.5" style="color:var(--text-l)">${w.txns.length} transactions</div>
+      </div>`;
+  }).join('');
+}
+
+function renderWalletDetail(){
+  const d=$('walletDetail');
+  const w=getWallet(selWalletId);
+  if(!w){ d.innerHTML=''; return; }
+  const income =w.txns.filter(t=>t.type==='income') .reduce((s,t)=>s+t.amt,0);
+  const expense=w.txns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+  const bal=walletBal(w);
+  d.innerHTML=`
+    <div class="rounded-2xl p-4 space-y-4" style="background:var(--surface);">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full" style="background:${w.color}"></span>
+          <span class="text-sm font-bold" style="color:var(--text)">${w.name}</span>
+        </div>
+        <div class="ml-auto flex gap-5">
+          <div>
+            <div class="text-[11px] font-medium" style="color:var(--text-l)">Income</div>
+            <div class="text-xs font-bold" style="color:#1e7e34">+$${fmt(income)}</div>
+          </div>
+          <div>
+            <div class="text-[11px] font-medium" style="color:var(--text-l)">Expense</div>
+            <div class="text-xs font-bold" style="color:var(--red)">-$${fmt(expense)}</div>
+          </div>
+          <div>
+            <div class="text-[11px] font-medium" style="color:var(--text-l)">Balance</div>
+            <div class="text-xs font-bold" style="color:var(--text)">$${fmt(bal)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <input id="finDesc" type="text" placeholder="Description (e.g. Coffee, Salary)…"
+          class="apple-input flex-1 min-w-40 px-3.5 py-2 rounded-xl text-xs font-medium"
+          style="background:#ffffff"
+          onkeydown="if(event.key==='Enter')addTxn('expense')" />
+        <input id="finAmt" type="number" min="0" placeholder="Amount"
+          class="apple-input w-28 px-3.5 py-2 rounded-xl text-xs font-medium"
+          style="background:#ffffff"
+          onkeydown="if(event.key==='Enter')addTxn('expense')" />
+        <button onclick="addTxn('income')" class="btn px-3.5 py-2 rounded-xl text-xs font-semibold"
+          style="background:#ffffff;color:#1e7e34;border:1px solid var(--border)">+ Income</button>
+        <button onclick="addTxn('expense')" class="btn px-3.5 py-2 rounded-xl text-xs font-semibold text-white"
+          style="background:var(--text)">− Expense</button>
+      </div>
+      <div class="max-h-48 overflow-y-auto rounded-xl px-3 py-1" style="background:#ffffff">
+        <table class="w-full text-xs border-collapse">
+          <thead><tr style="color:var(--text-l)">
+            <th class="text-left py-2 font-semibold">Description</th>
+            <th class="text-left py-2 font-semibold">Date</th>
+            <th class="text-right py-2 font-semibold">Amount</th>
+            <th class="py-2 w-8"></th>
+          </tr></thead>
+          <tbody id="txnTable"></tbody>
+        </table>
+        <p id="txnEmpty" class="text-center text-xs py-4 font-medium" style="color:var(--text-l);display:${w.txns.length?'none':'block'}">No transactions recorded yet.</p>
+      </div>
+    </div>`;
+  renderTxns(w);
+}
+
+function renderTxns(w){
+  const tb=$('txnTable'); if(!tb) return;
+  const empty=$('txnEmpty'); if(empty) empty.style.display=w.txns.length?'none':'block';
+  tb.innerHTML=[...w.txns].reverse().map((t,ri)=>{
+    const i=w.txns.length-1-ri, isInc=t.type==='income';
+    return `<tr class="border-t" style="border-color:var(--border)">
+      <td class="py-2 font-medium max-w-[140px] truncate" style="color:var(--text)">${t.desc}</td>
+      <td class="py-2 text-[11px]" style="color:var(--text-l)">${t.date || todayKey}</td>
+      <td class="py-2 text-right font-semibold" style="color:${isInc?'#1e7e34':'var(--text)'}">${isInc?'+':'-'}$${fmt(t.amt)}</td>
+      <td class="py-2 w-8 text-right">
+        <button onclick="deleteTxn(${i})" class="btn opacity-35 hover:opacity-100 w-5 h-5 rounded inline-flex items-center justify-center"
+          style="color:var(--text-m)">
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function selWallet(id){ selWalletId=id; ls.set('selWallet3',id); renderWalletCards(); renderWalletDetail(); }
+
+function addTxn(type){
+  const w=getWallet(selWalletId); if(!w) return;
+  const desc=$('finDesc').value.trim(), amt=parseFloat($('finAmt').value);
+  if(!desc||!amt||amt<=0) return;
+  w.txns.push({desc, amt, type, date:todayKey});
+  $('finDesc').value=$('finAmt').value='';
+  saveWallets(); renderWalletCards(); renderWalletDetail();
+}
+function deleteTxn(i){
+  const w=getWallet(selWalletId); if(!w) return;
+  w.txns.splice(i,1); saveWallets(); renderWalletCards(); renderWalletDetail();
+}
+function deleteWallet(id){
+  if(!confirm(`Delete account "${getWallet(id)?.name}"?`)) return;
+  wallets=wallets.filter(w=>w.id!==id);
+  if(selWalletId===id) selWalletId=wallets[0]?.id||null;
+  saveWallets(); renderWalletCards(); renderWalletDetail();
+}
+
+/* ─ Wallet modal ─ */
+function openWalletModal(id){
+  editWalletId=id;
+  if(id){
+    const w=getWallet(id);
+    $('wModalTitle').textContent='Edit Account';
+    $('wName').value=w.name; $('wInitBal').value=w.initBal||0; pickedColor=w.color;
+  } else {
+    $('wModalTitle').textContent='New Account';
+    $('wName').value=''; $('wInitBal').value=''; pickedColor=WALLET_COLORS[0];
+  }
+  renderWColorPicker(); $('walletModal').classList.remove('hidden');
+}
+function closeWalletModal(){ $('walletModal').classList.add('hidden'); }
+function renderWColorPicker(){
+  $('wColorPicker').innerHTML = WALLET_COLORS.map(c=>
+    `<div onclick="pickedColor='${c}';renderWColorPicker()" class="btn w-7 h-7 rounded-full"
+      style="background:${c};opacity:${pickedColor===c?1:0.3};transform:${pickedColor===c?'scale(1.15)':'scale(1)'}"></div>`
+  ).join('');
+}
+function saveWallet(){
+  const name=$('wName').value.trim(); if(!name) return;
+  const initBal=parseFloat($('wInitBal').value)||0;
+  if(editWalletId){
+    const w=getWallet(editWalletId); w.name=name; w.initBal=initBal; w.color=pickedColor;
+  } else {
+    const nw={id:uid(), name, color:pickedColor, initBal, txns:[]};
+    wallets.push(nw); selWalletId=nw.id;
+  }
+  saveWallets(); closeWalletModal(); renderWalletCards(); renderWalletDetail();
+}
+
+renderWalletCards(); renderWalletDetail();
+
+/* ════════════════════════════════════
+   BACKUP / RESTORE DATA
+════════════════════════════════════ */
+function exportData() {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    data[key] = localStorage.getItem(key);
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `phornchai-dashboard-backup-${todayKey}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
+      alert('Backup restored successfully. Reloading...');
+      location.reload();
+    } catch {
+      alert('Invalid backup file.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ── Init Lucide icons ── */
+lucide.createIcons();
+</script>
+</body>
+</html>
